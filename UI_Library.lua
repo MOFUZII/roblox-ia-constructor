@@ -1,6 +1,6 @@
 -- ============================================================
--- UI_LIBRARY.LUA v3.2.1 - SPLASH TAMAÑO CORRECTO
--- Splash del mismo tamaño que la ventana del chat
+-- UI_LIBRARY.LUA v3.2.2 - FIX CRÍTICO
+-- Corregido: PaddingBottom UDim (no UDim2)
 -- ============================================================
 
 local UI = {}
@@ -10,10 +10,6 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
-
--- ============================================================
--- PALETA DE COLORES
--- ============================================================
 
 UI.Colores = {
     fondo = Color3.fromRGB(25, 25, 28),
@@ -95,10 +91,12 @@ function UI:obtenerContexto()
 end
 
 -- ============================================================
--- SPLASH SCREEN - TAMAÑO 500x600 (IGUAL QUE EL CHAT)
+-- SPLASH SCREEN - TAMAÑO 500x600
 -- ============================================================
 
 function UI:mostrarSplashScreen(callback)
+    print("[UI_Library] Iniciando splash screen...")
+    
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "RozekSplash"
     ScreenGui.ResetOnSpawn = false
@@ -106,7 +104,6 @@ function UI:mostrarSplashScreen(callback)
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.Parent = game:GetService("CoreGui")
     
-    -- Fondo TAMAÑO VENTANA: 500x600
     local Fondo = Instance.new("Frame")
     Fondo.Size = UDim2.new(0, 500, 0, 600)
     Fondo.Position = UDim2.new(0.5, -250, 0.5, -300)
@@ -124,14 +121,12 @@ function UI:mostrarSplashScreen(callback)
     FondoStroke.Transparency = 0.5
     FondoStroke.Parent = Fondo
     
-    -- Logo Container - CENTRADO
     local LogoContainer = Instance.new("Frame")
     LogoContainer.Size = UDim2.new(0, 200, 0, 200)
     LogoContainer.Position = UDim2.new(0.5, -100, 0.4, -100)
     LogoContainer.BackgroundTransparency = 1
     LogoContainer.Parent = Fondo
     
-    -- Logo "R"
     local Logo = Instance.new("TextLabel")
     Logo.Size = UDim2.new(0, 100, 0, 100)
     Logo.Position = UDim2.new(0.5, -50, 0, 0)
@@ -149,7 +144,6 @@ function UI:mostrarSplashScreen(callback)
     LogoCorner.CornerRadius = UDim.new(0, 20)
     LogoCorner.Parent = Logo
     
-    -- Título "Rozek"
     local Titulo = Instance.new("TextLabel")
     Titulo.Size = UDim2.new(0, 200, 0, 40)
     Titulo.Position = UDim2.new(0, 0, 0, 110)
@@ -161,7 +155,6 @@ function UI:mostrarSplashScreen(callback)
     Titulo.TextTransparency = 1
     Titulo.Parent = LogoContainer
     
-    -- Subtítulo
     local Subtitulo = Instance.new("TextLabel")
     Subtitulo.Size = UDim2.new(0, 200, 0, 20)
     Subtitulo.Position = UDim2.new(0, 0, 0, 150)
@@ -173,7 +166,6 @@ function UI:mostrarSplashScreen(callback)
     Subtitulo.TextTransparency = 1
     Subtitulo.Parent = LogoContainer
     
-    -- Barra de progreso
     local BarraContainer = Instance.new("Frame")
     BarraContainer.Size = UDim2.new(0, 300, 0, 4)
     BarraContainer.Position = UDim2.new(0.5, -150, 0.7, 0)
@@ -203,7 +195,6 @@ function UI:mostrarSplashScreen(callback)
     }
     Gradiente.Parent = Barra
     
-    -- Texto de estado
     local Estado = Instance.new("TextLabel")
     Estado.Size = UDim2.new(0, 300, 0, 20)
     Estado.Position = UDim2.new(0.5, -150, 0.75, 0)
@@ -215,9 +206,9 @@ function UI:mostrarSplashScreen(callback)
     Estado.TextTransparency = 1
     Estado.Parent = Fondo
     
-    -- ANIMACIÓN
     task.spawn(function()
-        -- Fade-in logo (0.6s)
+        print("[UI_Library] Animando splash...")
+        
         TweenService:Create(Logo, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
             BackgroundTransparency = 0,
             TextTransparency = 0
@@ -233,7 +224,6 @@ function UI:mostrarSplashScreen(callback)
         
         task.wait(0.4)
         
-        -- Barra de progreso (0.9s)
         TweenService:Create(BarraContainer, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
         TweenService:Create(Estado, TweenInfo.new(0.2), {TextTransparency = 0}):Play()
         
@@ -245,26 +235,29 @@ function UI:mostrarSplashScreen(callback)
         
         task.wait(0.9)
         
-        -- Completado (0.2s)
         Estado.Text = "¡Listo!"
         task.wait(0.2)
         
-        -- Fade-out (0.2s)
-        for _, obj in ipairs({Logo, Titulo, Subtitulo, BarraContainer, Estado, FondoStroke}) do
+        print("[UI_Library] Splash completado, ejecutando callback...")
+        
+        for _, obj in ipairs({Logo, Titulo, Subtitulo, BarraContainer, Estado}) do
             TweenService:Create(obj, TweenInfo.new(0.2), {
                 BackgroundTransparency = 1,
-                TextTransparency = 1,
-                Transparency = 1
+                TextTransparency = 1
             }):Play()
         end
         
+        TweenService:Create(FondoStroke, TweenInfo.new(0.2), {Transparency = 1}):Play()
         TweenService:Create(Fondo, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
         
         task.wait(0.3)
         ScreenGui:Destroy()
+        print("[UI_Library] Splash destruido")
         
-        -- Ejecutar callback
-        if callback then callback() end
+        if callback then 
+            print("[UI_Library] Ejecutando callback...")
+            callback() 
+        end
     end)
 end
 
@@ -285,6 +278,8 @@ function UI:crearVentana(config)
     }
     
     local function crearInterfaz()
+        print("[UI_Library] Creando interfaz...")
+        
         pcall(function()
             local vieja = game:GetService("CoreGui"):FindFirstChild("RobloxAIConstructor")
             if vieja then vieja:Destroy() end
@@ -341,6 +336,8 @@ function UI:crearVentana(config)
             BackgroundTransparency = 0
         }):Play()
         
+        print("[UI_Library] Interfaz creada exitosamente")
+        
         return componentes
     end
     
@@ -353,8 +350,6 @@ function UI:crearVentana(config)
         return crearInterfaz()
     end
 end
-
--- [El resto de las funciones permanece igual...]
 
 function UI:_crearHeader(parent, config)
     local Header = Instance.new("Frame")
@@ -660,9 +655,10 @@ function UI:crearMensajeConStreaming(chatArea, config, callback)
     MsgCorner.CornerRadius = UDim.new(0, 8)
     MsgCorner.Parent = MsgBubble
     
+    -- ✅ FIX CRÍTICO: UDim no UDim2
     local MsgPadding = Instance.new("UIPadding")
     MsgPadding.PaddingTop = UDim.new(0, 12)
-    MsgPadding.PaddingBottom = UDim2.new(0, 12)
+    MsgPadding.PaddingBottom = UDim.new(0, 12)  -- ⬅️ CORREGIDO
     MsgPadding.PaddingLeft = UDim.new(0, 14)
     MsgPadding.PaddingRight = UDim.new(0, 14)
     MsgPadding.Parent = MsgBubble
@@ -757,7 +753,6 @@ function UI:mostrarPensando(chatArea)
     PuntosContainer.BackgroundTransparency = 1
     PuntosContainer.Parent = MsgBubble
     
-    local puntos = {}
     for i = 1, 3 do
         local punto = Instance.new("Frame")
         punto.Size = UDim2.new(0, 6, 0, 6)
@@ -769,8 +764,6 @@ function UI:mostrarPensando(chatArea)
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(1, 0)
         corner.Parent = punto
-        
-        table.insert(puntos, punto)
         
         task.spawn(function()
             while MsgContainer.Parent do
