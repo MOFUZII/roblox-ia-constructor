@@ -737,11 +737,9 @@ function Database:instalarPlugin(plugin)
 end
 
 function Database:ejecutarHookPlugin(hookNombre, ...)
-    for nombre, plugin in pairs(self.Plugins.instalados) do
-        if self.Plugins.activos[nombre] and plugin.hooks and plugin.hooks[hookNombre] then
-            pcall(plugin.hooks[hookNombre], ...)
-        end
-    end
+    -- Desactivado temporalmente para evitar error de atributos
+    -- Discord Sync funciona sin necesidad de hooks desde CORE_IA
+    return
 end
 
 -- ============================================================
