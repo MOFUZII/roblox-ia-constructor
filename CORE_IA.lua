@@ -1,20 +1,18 @@
 -- ============================================================
--- CORE_IA.LUA v3.2 - Cerebro Principal MEJORADO
+-- CORE_IA.LUA v3.2.1 - CORREGIDO
 -- Sistema Principal - Con SmartAI, Splash Screen y Streaming
 -- ============================================================
--- CAMBIOS EN v3.2:
--- ✅ Integración de SmartResponses (IA simulada)
--- ✅ Splash Screen "Rozek" al iniciar
--- ✅ Streaming de texto (letra por letra)
--- ✅ Indicador "pensando..." animado
--- ✅ Sistema de memoria/contexto
+-- FIXES v3.2.1:
+-- ✅ Lógica de inicialización corregida
+-- ✅ Callback del splash funciona correctamente
+-- ✅ Ventana se crea después del splash
 -- ============================================================
 
-print("[IA Constructor] Iniciando sistema v3.2...")
+print("[IA Constructor] Iniciando sistema v3.2.1...")
 
 local URLS = {
     Database     = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/Database_Mejorado.lua",
-    UI_Library   = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/UI_Library.lua", -- ⬅️ CORREGIDO (sin _v3_2)
+    UI_Library   = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/UI_Library.lua",
     SmartAI      = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/SmartResponses.lua",
     Plugins = {
         AnimationMaster = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/AnimationMaster_Plugin.lua",
@@ -50,22 +48,18 @@ end
 -- CARGAR MÓDULOS BASE
 -- ============================================================
 
--- Cargar Database
 Modulos.Database = cargarModulo("Database", URLS.Database)
 if not Modulos.Database then error("[IA Constructor] No se pudo cargar Database.") end
 
--- Cargar UI (v3.2 con streaming y splash)
 Modulos.UI = cargarModulo("UI_Library", URLS.UI_Library)
 if not Modulos.UI then error("[IA Constructor] No se pudo cargar UI_Library.") end
 
--- ⬇️⬇️⬇️ NUEVO: Cargar SmartAI ⬇️⬇️⬇️
 Modulos.SmartAI = cargarModulo("SmartAI", URLS.SmartAI)
 if not Modulos.SmartAI then 
     warn("[IA Constructor] ⚠️ SmartAI no disponible - usando respuestas básicas")
 else
     print("[IA Constructor] ✅ SmartAI cargado - Respuestas inteligentes activadas")
 end
--- ⬆️⬆️⬆️ FIN NUEVO ⬆️⬆️⬆️
 
 print("[IA Constructor] ✅ Módulos base cargados OK")
 
@@ -101,12 +95,10 @@ local function cargarPlugins()
                 end
             else
                 warn("[IA Constructor] ❌ Plugin '" .. nombre .. "' tiene estructura inválida")
-                warn("[IA Constructor] Estructura: info=" .. tostring(plugin.info) .. ", comandos=" .. tostring(plugin.comandos))
                 pluginsFallidos = pluginsFallidos + 1
             end
         else
             warn("[IA Constructor] ❌ Error al cargar plugin '" .. nombre .. "'")
-            warn("[IA Constructor] Razón: " .. tostring(plugin))
             pluginsFallidos = pluginsFallidos + 1
         end
     end
@@ -260,9 +252,7 @@ local function interpretarComando(texto)
         
         local mensajeRespuesta = "🏗️ Construyendo: " .. cmdData.descripcion
         
-        -- ⬇️⬇️⬇️ USAR SMARTAI SI ESTÁ DISPONIBLE ⬇️⬇️⬇️
         if Modulos.SmartAI then
-            -- Extraer color de parámetros
             local colorParam = nil
             for _, param in ipairs(parametros) do
                 if param:find("roj") or param:find("azul") or param:find("verde") or 
@@ -272,10 +262,8 @@ local function interpretarComando(texto)
                 end
             end
             
-            -- Generar respuesta inteligente
             mensajeRespuesta = Modulos.SmartAI:respuestaConstruccion(nombreCmd, {color = colorParam}, Modulos.Database:obtenerEstadisticas())
         elseif Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
-            -- Fallback a PersonalityAI si SmartAI no está
             local personalityPlugin = Modulos.Database.Plugins.instalados["PersonalityAI"]
             if personalityPlugin and personalityPlugin.generarRespuesta then
                 local colorParam = nil
@@ -289,7 +277,6 @@ local function interpretarComando(texto)
                 mensajeRespuesta = personalityPlugin.generarRespuesta("construccion", nombreCmd, {color = colorParam})
             end
         end
-        -- ⬆️⬆️⬆️ FIN SMARTAI ⬆️⬆️⬆️
         
         local codigo = construccion(parametros)
         if Modulos.Database.ejecutarHookPlugin then
@@ -442,169 +429,154 @@ local function deshacer()
 end
 
 -- ============================================================
--- INICIALIZAR INTERFAZ (CON SPLASH Y STREAMING)
+-- CONFIGURAR INTERFAZ (DENTRO DEL CALLBACK DEL SPLASH)
 -- ============================================================
 
-local function inicializarInterfaz()
-    -- ⬇️⬇️⬇️ MOSTRAR SPLASH SCREEN PRIMERO ⬇️⬇️⬇️
-    Modulos.UI:mostrarSplashScreen(function()
-        task.wait(0.2)
+local function configurarInterfaz(ventana)
+    local chatArea = ventana.ChatArea
+    local inputComponents = ventana.InputBox
+    local statusComponents = ventana.StatusBar
+    
+    -- Mensaje de bienvenida con streaming
+    local msg = "¡Hola! 👋 Soy Rozek, tu asistente v3.2\n\n"
+    msg = msg .. "Prueba:\n• casa roja\n• torre 15 azul\n• castillo gris\n• rotar rapido\n• ayuda"
+    
+    if pluginsActivos > 0 then
+        msg = msg .. "\n\n[" .. pluginsActivos .. " plugins activos]"
+    end
+    
+    if Modulos.SmartAI then
+        msg = msg .. "\n\n🧠 Respuestas inteligentes: ON"
+    end
+    
+    Modulos.UI:crearMensajeConStreaming(chatArea, {
+        texto = msg,
+        esUsuario = false,
+        velocidad = "normal"
+    })
+    
+    -- Función procesar mensaje
+    local function procesarMensaje(texto)
+        if estadoIA.pensando or texto == "" then return end
         
-        -- Crear ventana principal (sin splash interno porque ya se mostró)
-        local ventana = Modulos.UI:crearVentana({
-            titulo = "Rozek",
-            subtitulo = "Asistente IA v3.2",
-            ancho = 500,
-            alto = 600,
-            mostrarSplash = false  -- Ya se mostró arriba
-        })
+        estadoIA.pensando = true
+        estadoIA.ultimoComando = texto
         
-        local chatArea = ventana.ChatArea
-        local inputComponents = ventana.InputBox
-        local statusComponents = ventana.StatusBar
-
-        task.wait(0.5)
+        Modulos.UI:crearMensaje(chatArea, {texto = texto, esUsuario = true})
+        Modulos.UI:actualizarEstado(statusComponents, "pensando", "Procesando...")
+        local pensandoIndicador = Modulos.UI:mostrarPensando(chatArea)
         
-        -- ⬇️⬇️⬇️ MENSAJE DE BIENVENIDA CON STREAMING ⬇️⬇️⬇️
-        local msg = "¡Hola! 👋 Soy Rozek, tu asistente v3.2\n\n"
-        msg = msg .. "Prueba:\n• casa roja\n• torre 15 azul\n• castillo gris\n• rotar rapido\n• ayuda"
+        inputComponents.InputBox.Text = ""
         
-        if pluginsActivos > 0 then
-            msg = msg .. "\n\n[" .. pluginsActivos .. " plugins activos]"
-        end
+        task.wait(math.random(50, 100) / 100)
+        
+        Modulos.UI:ocultarPensando(chatArea)
+        
+        local res = interpretarComando(texto)
+        
+        local mensajeRespuesta = res.mensaje
+        local velocidadStreaming = "normal"
         
         if Modulos.SmartAI then
-            msg = msg .. "\n\n🧠 Respuestas inteligentes: ON"
+            local intencion = Modulos.SmartAI:detectarIntencion(texto)
+            
+            if intencion ~= "comando" then
+                mensajeRespuesta = Modulos.SmartAI:obtenerRespuesta(texto, intencion)
+                velocidadStreaming = "lento"
+            end
+            
+            Modulos.SmartAI:aprenderDeUsuario(texto)
+            mensajeRespuesta = Modulos.SmartAI:adaptarRespuesta(mensajeRespuesta)
         end
         
-        -- Usar streaming para el mensaje de bienvenida
-        Modulos.UI:crearMensajeConStreaming(chatArea, {
-            texto = msg,
-            esUsuario = false,
-            velocidad = "normal"
-        })
-        -- ⬆️⬆️⬆️ FIN MENSAJE BIENVENIDA ⬆️⬆️⬆️
-
-        -- ⬇️⬇️⬇️ FUNCIÓN PROCESAR MENSAJE CON SMARTAI ⬇️⬇️⬇️
-        local function procesarMensaje(texto)
-            if estadoIA.pensando or texto == "" then return end
-            
-            estadoIA.pensando = true
-            estadoIA.ultimoComando = texto
-            
-            -- Mostrar mensaje del usuario (sin streaming)
-            Modulos.UI:crearMensaje(chatArea, {texto = texto, esUsuario = true})
-            
-            -- Mostrar indicador "pensando..." animado
-            Modulos.UI:actualizarEstado(statusComponents, "pensando", "Procesando...")
-            local pensandoIndicador = Modulos.UI:mostrarPensando(chatArea)
-            
-            inputComponents.InputBox.Text = ""
-            
-            -- Simular tiempo de "pensamiento" (0.5-1s)
-            task.wait(math.random(50, 100) / 100)
-            
-            -- Ocultar indicador
-            Modulos.UI:ocultarPensando(chatArea)
-            
-            -- Interpretar comando
-            local res = interpretarComando(texto)
-            
-            -- ⬇️⬇️⬇️ GENERAR RESPUESTA INTELIGENTE CON SMARTAI ⬇️⬇️⬇️
-            local mensajeRespuesta = res.mensaje
-            local velocidadStreaming = "normal"
-            
-            if Modulos.SmartAI then
-                -- Detectar si es saludo/despedida/etc
-                local intencion = Modulos.SmartAI:detectarIntencion(texto)
-                
-                if intencion ~= "comando" then
-                    -- Es conversación casual (hola, gracias, etc)
-                    mensajeRespuesta = Modulos.SmartAI:obtenerRespuesta(texto, intencion)
-                    velocidadStreaming = "lento" -- Más humano para conversación
-                end
-                
-                -- Aprender del usuario
-                Modulos.SmartAI:aprenderDeUsuario(texto)
-                
-                -- Adaptar respuesta al estilo del usuario
-                mensajeRespuesta = Modulos.SmartAI:adaptarRespuesta(mensajeRespuesta)
-            end
-            -- ⬆️⬆️⬆️ FIN SMARTAI ⬆️⬆️⬆️
-            
-            -- Ejecutar código si existe
-            if res.codigo then
-                local ok, msg = ejecutarCodigo(res.codigo)
-                if ok then
-                    -- Éxito - mostrar con streaming
-                    Modulos.UI:crearMensajeConStreaming(chatArea, {
-                        texto = mensajeRespuesta,
-                        esExito = true,
-                        velocidad = velocidadStreaming
-                    })
-                    Modulos.UI:actualizarEstado(statusComponents, "exito", "OK")
-                else
-                    -- Error de ejecución
-                    Modulos.UI:crearMensajeConStreaming(chatArea, {
-                        texto = "❌ " .. msg,
-                        esError = true,
-                        velocidad = "rapido"
-                    })
-                    Modulos.UI:actualizarEstado(statusComponents, "error", "Error")
-                end
-            else
-                -- Sin código, solo respuesta (ayuda, stats, etc)
+        if res.codigo then
+            local ok, msg = ejecutarCodigo(res.codigo)
+            if ok then
                 Modulos.UI:crearMensajeConStreaming(chatArea, {
                     texto = mensajeRespuesta,
-                    esError = not res.exito,
+                    esExito = true,
                     velocidad = velocidadStreaming
                 })
-                Modulos.UI:actualizarEstado(statusComponents, res.exito and "listo" or "error", res.exito and "Listo" or "Error")
+                Modulos.UI:actualizarEstado(statusComponents, "exito", "OK")
+            else
+                Modulos.UI:crearMensajeConStreaming(chatArea, {
+                    texto = "❌ " .. msg,
+                    esError = true,
+                    velocidad = "rapido"
+                })
+                Modulos.UI:actualizarEstado(statusComponents, "error", "Error")
             end
-            
-            estadoIA.pensando = false
+        else
+            Modulos.UI:crearMensajeConStreaming(chatArea, {
+                texto = mensajeRespuesta,
+                esError = not res.exito,
+                velocidad = velocidadStreaming
+            })
+            Modulos.UI:actualizarEstado(statusComponents, res.exito and "listo" or "error", res.exito and "Listo" or "Error")
         end
-        -- ⬆️⬆️⬆️ FIN PROCESAR MENSAJE ⬆️⬆️⬆️
-
-        -- Conectar eventos
-        inputComponents.SendBtn.MouseButton1Click:Connect(function()
-            procesarMensaje(inputComponents.InputBox.Text)
-        end)
         
-        inputComponents.InputBox.FocusLost:Connect(function(enter)
-            if enter then procesarMensaje(inputComponents.InputBox.Text) end
-        end)
-        
-        UserInputService.InputBegan:Connect(function(input, gp)
-            if gp then return end
-            if input.KeyCode == Enum.KeyCode.Z and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                local ok, msg = deshacer()
-                Modulos.UI:mostrarNotificacion({texto = msg, tipo = ok and "exito" or "error", duracion = 2})
-            end
-        end)
+        estadoIA.pensando = false
+    end
+    
+    -- Conectar eventos
+    inputComponents.SendBtn.MouseButton1Click:Connect(function()
+        procesarMensaje(inputComponents.InputBox.Text)
     end)
-    -- ⬆️⬆️⬆️ FIN SPLASH CALLBACK ⬆️⬆️⬆️
+    
+    inputComponents.InputBox.FocusLost:Connect(function(enter)
+        if enter then procesarMensaje(inputComponents.InputBox.Text) end
+    end)
+    
+    UserInputService.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == Enum.KeyCode.Z and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            local ok, msg = deshacer()
+            Modulos.UI:mostrarNotificacion({texto = msg, tipo = ok and "exito" or "error", duracion = 2})
+        end
+    end)
 end
 
 -- ============================================================
--- INICIALIZAR SISTEMA
+-- INICIALIZAR SISTEMA - CORREGIDO
 -- ============================================================
 
 local function inicializar()
     if not Modulos.Database or not Modulos.UI then error("Módulos no cargados") end
     
-    -- Inicializar interfaz (incluye splash automático)
-    inicializarInterfaz()
+    print("[IA Constructor] Mostrando splash screen...")
     
-    -- Notificación final (después del splash)
-    task.wait(3) -- Esperar a que termine el splash
-    local msg = "Rozek v3.2 listo!"
-    if pluginsActivos > 0 then msg = msg .. " (" .. pluginsActivos .. " plugins)" end
-    if Modulos.SmartAI then msg = msg .. " 🧠" end
-    
-    Modulos.UI:mostrarNotificacion({texto = msg, tipo = "exito", duracion = 3})
-    print("[IA Constructor] ✅ Version: " .. Modulos.Database.Config.version)
-    print("[IA Constructor] ✅ SmartAI: " .. (Modulos.SmartAI and "Activo" or "Desactivado"))
+    -- ✅ CORREGIDO: Splash + Callback que crea la ventana
+    Modulos.UI:mostrarSplashScreen(function()
+        print("[IA Constructor] Splash completado, creando interfaz...")
+        
+        task.wait(0.2)
+        
+        -- Crear ventana SIN splash interno (ya se mostró)
+        local ventana = Modulos.UI:crearVentana({
+            titulo = "Rozek",
+            subtitulo = "Asistente IA v3.2",
+            ancho = 500,
+            alto = 600,
+            mostrarSplash = false  -- ⬅️ IMPORTANTE: Ya se mostró arriba
+        })
+        
+        print("[IA Constructor] Ventana creada, configurando...")
+        
+        task.wait(0.3)
+        
+        -- Configurar interfaz
+        configurarInterfaz(ventana)
+        
+        task.wait(0.5)
+        
+        -- Notificación final
+        local msg = "Rozek v3.2 listo!"
+        if pluginsActivos > 0 then msg = msg .. " (" .. pluginsActivos .. " plugins)" end
+        if Modulos.SmartAI then msg = msg .. " 🧠" end
+        
+        Modulos.UI:mostrarNotificacion({texto = msg, tipo = "exito", duracion = 3})
+        print("[IA Constructor] ✅ Sistema completamente inicializado")
+    end)
 end
 
 -- ============================================================
@@ -613,7 +585,7 @@ end
 
 local ok, err = pcall(inicializar)
 if not ok then
-    warn("[IA Constructor] ❌ Error: " .. tostring(err))
+    warn("[IA Constructor] ❌ Error crítico: " .. tostring(err))
     pcall(function()
         local sg = Instance.new("ScreenGui") sg.Parent = game:GetService("CoreGui")
         local f = Instance.new("Frame") f.Size = UDim2.new(0, 400, 0, 120) f.Position = UDim2.new(0.5, -200, 0.5, -60)
@@ -624,4 +596,3 @@ if not ok then
         t.TextWrapped = true t.Parent = f
     end)
 end
-
