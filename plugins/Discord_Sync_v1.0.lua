@@ -1,5 +1,5 @@
 -- ============================================================
--- DISCORD_SYNC.LUA v1.0
+-- DISCORD_SYNC.LUA v1.0.1 - CORREGIDO
 -- Sistema de sincronización de datos con Discord
 -- ============================================================
 
@@ -10,23 +10,12 @@ local DiscordSync = {}
 -- ============================================================
 
 DiscordSync.Config = {
-    webhookURL = "", -- URL del webhook de Discord (configurar por usuario)
-    enabled = false, -- Se activa cuando hay webhook configurado
-    queueInterval = 5, -- Segundos entre envíos
-    maxBatchSize = 10, -- Máximo de eventos por lote
+    webhookURL = "",
+    enabled = false,
+    queueInterval = 5,
+    maxBatchSize = 10,
     retryAttempts = 3,
-    channels = {
-        stats = "📊-estadisticas",
-        logs = "📝-logs",
-        constructions = "🏗️-construcciones",
-        errors = "❌-errores",
-        users = "👥-usuarios"
-    }
 }
-
--- ============================================================
--- COLA DE EVENTOS
--- ============================================================
 
 DiscordSync.Queue = {
     pending = {},
@@ -34,7 +23,7 @@ DiscordSync.Queue = {
 }
 
 -- ============================================================
--- FUNCIÓN: Configurar Webhook
+-- FUNCIONES PRINCIPALES
 -- ============================================================
 
 function DiscordSync:configurarWebhook(url)
@@ -55,15 +44,11 @@ function DiscordSync:configurarWebhook(url)
     return true
 end
 
--- ============================================================
--- FUNCIÓN: Crear Embed para Discord
--- ============================================================
-
 function DiscordSync:crearEmbed(config)
     local embed = {
         title = config.title or "Evento IA Constructor",
         description = config.description or "",
-        color = config.color or 5814783, -- Azul por defecto
+        color = config.color or 5814783,
         timestamp = os.date("!%Y-%m-%dT%H:%M:%S"),
         footer = {
             text = "Rozek IA v3.3"
@@ -81,16 +66,8 @@ function DiscordSync:crearEmbed(config)
         end
     end
     
-    if config.thumbnail then
-        embed.thumbnail = { url = config.thumbnail }
-    end
-    
     return embed
 end
-
--- ============================================================
--- FUNCIÓN: Enviar a Discord
--- ============================================================
 
 function DiscordSync:enviarWebhook(data, callback)
     if not self.Config.enabled then
@@ -124,10 +101,6 @@ function DiscordSync:enviarWebhook(data, callback)
     end
 end
 
--- ============================================================
--- FUNCIÓN: Agregar a Cola
--- ============================================================
-
 function DiscordSync:agregarACola(evento)
     table.insert(self.Queue.pending, {
         evento = evento,
@@ -140,10 +113,6 @@ function DiscordSync:agregarACola(evento)
     end
 end
 
--- ============================================================
--- FUNCIÓN: Procesar Cola
--- ============================================================
-
 function DiscordSync:procesarCola()
     if self.Queue.processing or #self.Queue.pending == 0 then
         return
@@ -155,12 +124,10 @@ function DiscordSync:procesarCola()
         while #self.Queue.pending > 0 do
             local lote = {}
             
-            -- Tomar hasta maxBatchSize eventos
             for i = 1, math.min(self.Config.maxBatchSize, #self.Queue.pending) do
                 table.insert(lote, table.remove(self.Queue.pending, 1))
             end
             
-            -- Enviar lote
             for _, item in ipairs(lote) do
                 self:enviarWebhook(item.evento, function(success, error)
                     if not success and item.intentos < self.Config.retryAttempts then
@@ -169,7 +136,7 @@ function DiscordSync:procesarCola()
                     end
                 end)
                 
-                task.wait(0.5) -- Evitar rate limit
+                task.wait(0.5)
             end
             
             task.wait(self.Config.queueInterval)
@@ -179,31 +146,8 @@ function DiscordSync:procesarCola()
     end)
 end
 
--- ============================================================
--- EVENTOS ESPECÍFICOS
--- ============================================================
-
--- Registrar nueva sesión
-function DiscordSync:registrarSesion(usuario, stats)
-    local embed = self:crearEmbed({
-        title = "🎮 Nueva Sesión Iniciada",
-        description = "Un usuario ha iniciado Rozek IA",
-        color = 3066993, -- Verde
-        fields = {
-            {name = "👤 Usuario", value = usuario, inline = true},
-            {name = "⏰ Hora", value = os.date("%H:%M:%S"), inline = true},
-            {name = "📊 Total Comandos", value = tostring(stats.totalComandos or 0), inline = true},
-            {name = "✅ Exitosos", value = tostring(stats.comandosExitosos or 0), inline = true},
-            {name = "❌ Fallidos", value = tostring(stats.comandosFallidos or 0), inline = true},
-        }
-    })
-    
-    self:agregarACola(embed)
-end
-
--- Registrar construcción
 function DiscordSync:registrarConstruccion(usuario, nombreCmd, parametros, exito)
-    local color = exito and 3066993 or 15158332 -- Verde/Rojo
+    local color = exito and 3066993 or 15158332
     
     local embed = self:crearEmbed({
         title = exito and "🏗️ Construcción Creada" or "❌ Error en Construcción",
@@ -212,47 +156,13 @@ function DiscordSync:registrarConstruccion(usuario, nombreCmd, parametros, exito
         fields = {
             {name = "👤 Usuario", value = usuario, inline = true},
             {name = "⏰ Hora", value = os.date("%H:%M:%S"), inline = true},
-            {name = "📝 Parámetros", value = table.concat(parametros, ", ") or "Ninguno", inline = false},
+            {name = "📝 Parámetros", value = #parametros > 0 and table.concat(parametros, ", ") or "Ninguno", inline = false},
         }
     })
     
     self:agregarACola(embed)
 end
 
--- Registrar estadísticas
-function DiscordSync:registrarEstadisticas(stats)
-    local embed = self:crearEmbed({
-        title = "📊 Estadísticas Actualizadas",
-        color = 5814783, -- Azul
-        fields = {
-            {name = "📈 Total Comandos", value = tostring(stats.totalComandos), inline = true},
-            {name = "✅ Exitosos", value = tostring(stats.comandosExitosos), inline = true},
-            {name = "❌ Fallidos", value = tostring(stats.comandosFallidos), inline = true},
-            {name = "🏗️ Construcciones", value = tostring(stats.construccionesCreadas or 0), inline = true},
-            {name = "📅 Desde", value = os.date("%d/%m/%Y", stats.fechaInstalacion), inline = true},
-        }
-    })
-    
-    self:agregarACola(embed)
-end
-
--- Registrar error
-function DiscordSync:registrarError(usuario, comando, error)
-    local embed = self:crearEmbed({
-        title = "❌ Error Reportado",
-        description = "```\n" .. tostring(error) .. "\n```",
-        color = 15158332, -- Rojo
-        fields = {
-            {name = "👤 Usuario", value = usuario, inline = true},
-            {name = "⏰ Hora", value = os.date("%H:%M:%S"), inline = true},
-            {name = "📝 Comando", value = comando, inline = false},
-        }
-    })
-    
-    self:agregarACola(embed)
-end
-
--- Registrar comando
 function DiscordSync:registrarComando(usuario, comando, tipoComando, exito)
     local embed = self:crearEmbed({
         title = "📝 Comando Ejecutado",
@@ -268,58 +178,52 @@ function DiscordSync:registrarComando(usuario, comando, tipoComando, exito)
     self:agregarACola(embed)
 end
 
--- ============================================================
--- FUNCIONES DE UTILIDAD
--- ============================================================
-
-function DiscordSync:limpiarCola()
-    self.Queue.pending = {}
-    print("[Discord Sync] Cola limpiada")
-end
-
-function DiscordSync:obtenerEstadoCola()
-    return {
-        pendientes = #self.Queue.pending,
-        procesando = self.Queue.processing,
-        habilitado = self.Config.enabled
-    }
-end
-
-function DiscordSync:desactivar()
-    self.Config.enabled = false
-    self:limpiarCola()
-    print("[Discord Sync] Sincronización desactivada")
+function DiscordSync:registrarError(usuario, comando, error)
+    local embed = self:crearEmbed({
+        title = "❌ Error Reportado",
+        description = "```\n" .. tostring(error) .. "\n```",
+        color = 15158332,
+        fields = {
+            {name = "👤 Usuario", value = usuario, inline = true},
+            {name = "⏰ Hora", value = os.date("%H:%M:%S"), inline = true},
+            {name = "📝 Comando", value = comando, inline = false},
+        }
+    })
+    
+    self:agregarACola(embed)
 end
 
 -- ============================================================
--- COMANDOS PARA INTEGRAR EN DATABASE
+-- COMANDOS DEL PLUGIN
 -- ============================================================
 
-DiscordSync.Comandos = {
-    ["discord_setup"] = {
+local comandos = {
+    discord_setup = {
         tipo = "sistema",
         descripcion = "Configurar webhook de Discord",
         parametros = {"url"},
+        categoria = "discord",
         ejecutar = function(params)
-            if not params or #params == 0 then
+            if not params or #params < 2 then
                 return "Uso: discord_setup [URL_WEBHOOK]"
             end
             
-            local url = params[1]
+            local url = params[2]
             local exito = DiscordSync:configurarWebhook(url)
             
             if exito then
-                return "✅ Discord configurado correctamente. Los datos se sincronizarán automáticamente."
+                return "✅ Discord configurado. Los datos se sincronizarán automáticamente."
             else
-                return "❌ URL de webhook inválida. Obtén una desde: Configuración del servidor > Integraciones > Webhooks"
+                return "❌ URL inválida. Obtén una desde: Servidor > Integraciones > Webhooks"
             end
         end
     },
     
-    ["discord_test"] = {
+    discord_test = {
         tipo = "sistema",
         descripcion = "Enviar mensaje de prueba a Discord",
         parametros = {},
+        categoria = "discord",
         ejecutar = function()
             if not DiscordSync.Config.enabled then
                 return "⚠️ Discord no configurado. Usa: discord_setup [URL]"
@@ -327,54 +231,49 @@ DiscordSync.Comandos = {
             
             DiscordSync:enviarWebhook({
                 title = "🧪 Mensaje de Prueba",
-                description = "Si ves esto, ¡la conexión funciona correctamente!",
+                description = "¡La conexión funciona correctamente!",
                 color = 3066993
-            }, function(success, msg)
-                if success then
-                    print("✅ Prueba exitosa")
-                else
-                    warn("❌ Error: " .. tostring(msg))
-                end
-            end)
+            })
             
-            return "📤 Mensaje de prueba enviado. Revisa tu canal de Discord."
+            return "📤 Mensaje enviado. Revisa Discord."
         end
     },
     
-    ["discord_status"] = {
+    discord_status = {
         tipo = "sistema",
-        descripcion = "Ver estado de la sincronización con Discord",
+        descripcion = "Ver estado de Discord Sync",
         parametros = {},
+        categoria = "discord",
         ejecutar = function()
-            local estado = DiscordSync:obtenerEstadoCola()
-            
-            local msg = "📊 ESTADO DE DISCORD SYNC\n\n"
-            msg = msg .. "Estado: " .. (estado.habilitado and "✅ Activo" or "❌ Desactivado") .. "\n"
-            msg = msg .. "Eventos pendientes: " .. estado.pendientes .. "\n"
-            msg = msg .. "Procesando: " .. (estado.procesando and "Sí" or "No") .. "\n"
+            local msg = "📊 DISCORD SYNC\n\n"
+            msg = msg .. "Estado: " .. (DiscordSync.Config.enabled and "✅ Activo" or "❌ Desactivado") .. "\n"
+            msg = msg .. "Eventos pendientes: " .. #DiscordSync.Queue.pending .. "\n"
+            msg = msg .. "Procesando: " .. (DiscordSync.Queue.processing and "Sí" or "No")
             
             return msg
         end
     },
     
-    ["discord_disable"] = {
+    discord_disable = {
         tipo = "sistema",
-        descripcion = "Desactivar sincronización con Discord",
+        descripcion = "Desactivar Discord Sync",
         parametros = {},
+        categoria = "discord",
         ejecutar = function()
-            DiscordSync:desactivar()
-            return "🔴 Sincronización con Discord desactivada"
+            DiscordSync.Config.enabled = false
+            DiscordSync.Queue.pending = {}
+            return "🔴 Discord Sync desactivado"
         end
     }
 }
 
 -- ============================================================
--- HOOKS PARA INTEGRACIÓN
+-- HOOKS
 -- ============================================================
 
-DiscordSync.Hooks = {
+local hooks = {
     onInit = function()
-        print("[Discord Sync] Sistema de sincronización cargado")
+        print("[Discord Sync] ✅ Sistema cargado")
         print("[Discord Sync] Usa 'discord_setup [URL]' para configurar")
     end,
     
@@ -384,41 +283,44 @@ DiscordSync.Hooks = {
                 usuario or "Desconocido",
                 nombreCmd,
                 parametros or {},
-                exito
+                exito or true
             )
         end
     end,
     
     onComandoEjecutado = function(usuario, comando, tipo, exito)
         if DiscordSync.Config.enabled then
-            DiscordSync:registrarComando(usuario, comando, tipo, exito)
+            DiscordSync:registrarComando(
+                usuario or "Desconocido",
+                comando,
+                tipo or "sistema",
+                exito or false
+            )
         end
     end,
     
     onError = function(usuario, comando, error)
         if DiscordSync.Config.enabled then
-            DiscordSync:registrarError(usuario, comando, error)
-        end
-    end,
-    
-    onEstadisticasActualizadas = function(stats)
-        if DiscordSync.Config.enabled and stats.totalComandos % 10 == 0 then
-            DiscordSync:registrarEstadisticas(stats)
+            DiscordSync:registrarError(
+                usuario or "Desconocido",
+                comando or "desconocido",
+                error
+            )
         end
     end
 }
 
 -- ============================================================
--- PLUGIN INFO
+-- RETORNAR PLUGIN
 -- ============================================================
 
-DiscordSync.info = {
-    nombre = "Discord_Sync",
-    version = "1.0.0",
-    autor = "MOFUZII",
-    descripcion = "Sistema de sincronización de datos con Discord",
-    comandos = DiscordSync.Comandos,
-    hooks = DiscordSync.Hooks
+return {
+    info = {
+        nombre = "Discord_Sync",
+        version = "1.0.1",
+        autor = "MOFUZII",
+        descripcion = "Sincronización con Discord"
+    },
+    comandos = comandos,
+    hooks = hooks
 }
-
-return DiscordSync
