@@ -1,6 +1,6 @@
 -- ============================================================
--- CORE_IA.LUA v3.3 FINAL - SIN SPLASH + TODAS LAS FUNCIONES
--- Sistema completo con SmartAI pero sin pantalla de carga
+-- CORE_IA.LUA v3.3 FINAL - CON DISCORD SYNC
+-- Sistema completo con SmartAI + Discord Integration
 -- ============================================================
 
 print("[IA Constructor] Iniciando sistema v3.3...")
@@ -12,6 +12,7 @@ local URLS = {
     Plugins = {
         AnimationMaster = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/AnimationMaster_Plugin.lua",
         HybridLearning  = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/plugins/HybridLearning_Plugin.lua",
+        DiscordSync     = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/plugins/Discord_Sync_v1.0.lua",  -- ✅ NUEVO
     }
 }
 
@@ -265,7 +266,12 @@ local function interpretarComando(texto)
         
         local codigo = construccion(parametros)
         if Modulos.Database.ejecutarHookPlugin then
-            Modulos.Database:ejecutarHookPlugin("onConstruccionCreada", nombreCmd)
+            -- Convertir parametros a tabla simple para evitar error de atributos
+            local paramSimples = {}
+            for i, p in ipairs(parametros) do
+                paramSimples[i] = tostring(p)
+            end
+            Modulos.Database:ejecutarHookPlugin("onConstruccionCreada", nombreCmd, tostring(player.Name))
         end
         return { exito = true, codigo = codigo, mensaje = mensajeRespuesta, tipo = "construccion", nombreCmd = nombreCmd }
     end
@@ -353,12 +359,13 @@ local function interpretarComando(texto)
         end
     end
     
-    -- SISTEMA (stats, etc)
+    -- SISTEMA (stats, etc) + COMANDOS DE DISCORD
     if cmdData.tipo == "sistema" then
-        if nombreCmd == "stats" or nombreCmd == "globalstats" or nombreCmd == "trending" or nombreCmd == "sync" then
+        -- Buscar si es un comando de plugin
+        if Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
             for nombrePlugin, pluginData in pairs(Modulos.Database.Plugins.instalados) do
                 if pluginData.comandos and pluginData.comandos[nombreCmd] and pluginData.comandos[nombreCmd].ejecutar then
-                    local resultado = pluginData.comandos[nombreCmd].ejecutar()
+                    local resultado = pluginData.comandos[nombreCmd].ejecutar(palabras)
                     return { exito = true, codigo = nil, mensaje = resultado, tipo = "sistema" }
                 end
             end
@@ -383,6 +390,9 @@ local function ejecutarCodigo(codigo)
         return true,"OK"
     else
         Modulos.Database:actualizarEstadistica("comandosFallidos")
+        if Modulos.Database.ejecutarHookPlugin then
+            Modulos.Database:ejecutarHookPlugin("onError", tostring(player.Name), estadoIA.ultimoComando, tostring(errE))
+        end
         return false,"Error: "..tostring(errE)
     end
 end
@@ -426,7 +436,7 @@ local function inicializar()
     
     local ventana = Modulos.UI:crearVentana({
         titulo = "Rozek",
-        subtitulo = "Asistente IA v3.3",
+        subtitulo = "Asistente IA v3.3 + Discord",
         ancho = 500,
         alto = 600
     })
@@ -464,6 +474,21 @@ local function inicializar()
     
     if Modulos.SmartAI then
         msg = msg .. "\n🧠 Respuestas inteligentes: ON"
+    end
+    
+    -- Verificar si Discord está disponible
+    local discordDisponible = false
+    if Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
+        for nombre, _ in pairs(Modulos.Database.Plugins.instalados) do
+            if nombre == "Discord_Sync" then
+                discordDisponible = true
+                break
+            end
+        end
+    end
+    
+    if discordDisponible then
+        msg = msg .. "\n💬 Discord Sync: Disponible (usa 'discord_setup')"
     end
     
     Modulos.UI:crearMensajeConStreaming(chatArea, {
@@ -515,6 +540,11 @@ local function inicializar()
                     velocidad = velocidadStreaming
                 })
                 Modulos.UI:actualizarEstado(statusComponents, "exito", "OK")
+                
+                -- Hook de comando ejecutado exitosamente
+                if Modulos.Database.ejecutarHookPlugin then
+                    Modulos.Database:ejecutarHookPlugin("onComandoEjecutado", tostring(player.Name), texto, res.tipo, true)
+                end
             else
                 Modulos.UI:crearMensajeConStreaming(chatArea, {
                     texto = "❌ " .. msg,
@@ -530,6 +560,11 @@ local function inicializar()
                 velocidad = velocidadStreaming
             })
             Modulos.UI:actualizarEstado(statusComponents, res.exito and "listo" or "error", res.exito and "Listo" or "Error")
+            
+            -- Hook de comando ejecutado
+            if Modulos.Database.ejecutarHookPlugin and res.tipo == "sistema" then
+                Modulos.Database:ejecutarHookPlugin("onComandoEjecutado", tostring(player.Name), texto, res.tipo, res.exito)
+            end
         end
         
         estadoIA.pensando = false
@@ -557,6 +592,7 @@ local function inicializar()
     local msg = "✅ Rozek v3.3 listo!"
     if pluginsActivos > 0 then msg = msg .. " (" .. pluginsActivos .. " plugins)" end
     if Modulos.SmartAI then msg = msg .. " 🧠" end
+    if discordDisponible then msg = msg .. " 💬" end
     Modulos.UI:mostrarNotificacion({texto = msg, tipo = "exito", duracion = 3})
     
     print("[IA Constructor] ✅ Sistema completamente inicializado")
