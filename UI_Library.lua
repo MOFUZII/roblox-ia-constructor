@@ -1,6 +1,13 @@
 -- ============================================================
--- UI_LIBRARY.LUA v3.1 - Estilo Claude (Tema Oscuro)
--- Diseno moderno con colores oscuros como la interfaz de Claude
+-- UI_LIBRARY.LUA v3.2 - VERSIÓN MEJORADA CON STREAMING
+-- Tema oscuro estilo Claude + Animaciones + Memoria
+-- ============================================================
+-- NUEVAS CARACTERÍSTICAS:
+-- ✅ Splash Screen "Rozek" con animación
+-- ✅ Sistema de streaming de texto (letra por letra)
+-- ✅ Indicador "pensando..." animado
+-- ✅ Sistema de memoria/contexto
+-- ✅ Respuestas inteligentes simuladas
 -- ============================================================
 
 local UI = {}
@@ -9,6 +16,7 @@ local UI = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
@@ -18,21 +26,22 @@ local player = Players.LocalPlayer
 
 UI.Colores = {
     -- Fondos oscuros
-    fondo = Color3.fromRGB(25, 25, 28),              -- Gris muy oscuro
-    fondoChat = Color3.fromRGB(32, 33, 35),          -- Gris oscuro
+    fondo = Color3.fromRGB(25, 25, 28),
+    fondoChat = Color3.fromRGB(32, 33, 35),
     
     -- Mensajes
-    mensajeIA = Color3.fromRGB(42, 43, 46),          -- Gris medio oscuro
-    mensajeUsuario = Color3.fromRGB(52, 53, 65),     -- Gris azulado
+    mensajeIA = Color3.fromRGB(42, 43, 46),
+    mensajeUsuario = Color3.fromRGB(52, 53, 65),
     
     -- Texto
-    textoPrincipal = Color3.fromRGB(236, 236, 241),  -- Blanco suave
-    textoSecundario = Color3.fromRGB(142, 142, 160), -- Gris medio
-    textoTerciario = Color3.fromRGB(86, 88, 105),    -- Gris oscuro
+    textoPrincipal = Color3.fromRGB(236, 236, 241),
+    textoSecundario = Color3.fromRGB(142, 142, 160),
+    textoTerciario = Color3.fromRGB(86, 88, 105),
     
     -- Acentos
-    acento = Color3.fromRGB(171, 104, 255),          -- Morado Claude
+    acento = Color3.fromRGB(171, 104, 255),
     acentoHover = Color3.fromRGB(151, 84, 235),
+    acentoGradiente = Color3.fromRGB(99, 102, 241),
     
     -- Bordes
     borde = Color3.fromRGB(52, 53, 65),
@@ -47,6 +56,7 @@ UI.Colores = {
 UI.Estilos = {
     fuentePrincipal = Enum.Font.Gotham,
     fuenteTitulo = Enum.Font.GothamBold,
+    fuenteCodigo = Enum.Font.Code,
     tamanoTexto = 14,
     tamanoTitulo = 17,
     
@@ -59,10 +69,234 @@ UI.Estilos = {
     duracionRapida = 0.15,
     duracionNormal = 0.25,
     duracionLenta = 0.35,
+    
+    -- Velocidades de streaming
+    streamingNormal = 0.03,  -- 30ms por carácter
+    streamingRapido = 0.015, -- 15ms por carácter (código)
+    streamingLento = 0.05,   -- 50ms por carácter (enfático)
 }
 
 -- ============================================================
--- FUNCION PRINCIPAL: CREAR VENTANA
+-- SISTEMA DE MEMORIA
+-- ============================================================
+
+UI.Memoria = {
+    historial = {},
+    maxHistorial = 100,
+    contexto = {},
+    maxContexto = 10,
+    
+    preferencias = {
+        velocidadStreaming = "normal",
+        mostrarTimestamps = false,
+        sonidosActivados = true,
+    },
+    
+    estadisticas = {
+        mensajesEnviados = 0,
+        mensajesRecibidos = 0,
+        sesionInicio = os.time(),
+    }
+}
+
+function UI:guardarMensaje(texto, esUsuario, metadata)
+    local mensaje = {
+        texto = texto,
+        esUsuario = esUsuario,
+        timestamp = os.time(),
+        metadata = metadata or {}
+    }
+    
+    table.insert(self.Memoria.historial, mensaje)
+    table.insert(self.Memoria.contexto, mensaje)
+    
+    -- Limitar historial
+    if #self.Memoria.historial > self.Memoria.maxHistorial then
+        table.remove(self.Memoria.historial, 1)
+    end
+    
+    -- Limitar contexto
+    if #self.Memoria.contexto > self.Memoria.maxContexto then
+        table.remove(self.Memoria.contexto, 1)
+    end
+    
+    -- Actualizar estadísticas
+    if esUsuario then
+        self.Memoria.estadisticas.mensajesEnviados = self.Memoria.estadisticas.mensajesEnviados + 1
+    else
+        self.Memoria.estadisticas.mensajesRecibidos = self.Memoria.estadisticas.mensajesRecibidos + 1
+    end
+end
+
+function UI:obtenerContexto()
+    return self.Memoria.contexto
+end
+
+-- ============================================================
+-- SPLASH SCREEN "ROZEK"
+-- ============================================================
+
+function UI:mostrarSplashScreen(callback)
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "RozekSplash"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.DisplayOrder = 1000
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Parent = game:GetService("CoreGui")
+    
+    -- Fondo
+    local Fondo = Instance.new("Frame")
+    Fondo.Size = UDim2.new(1, 0, 1, 0)
+    Fondo.BackgroundColor3 = self.Colores.fondo
+    Fondo.BorderSizePixel = 0
+    Fondo.Parent = ScreenGui
+    
+    -- Logo Container
+    local LogoContainer = Instance.new("Frame")
+    LogoContainer.Size = UDim2.new(0, 200, 0, 200)
+    LogoContainer.Position = UDim2.new(0.5, -100, 0.5, -150)
+    LogoContainer.BackgroundTransparency = 1
+    LogoContainer.Parent = Fondo
+    
+    -- Logo "R"
+    local Logo = Instance.new("TextLabel")
+    Logo.Size = UDim2.new(0, 120, 0, 120)
+    Logo.Position = UDim2.new(0.5, -60, 0, 0)
+    Logo.BackgroundColor3 = self.Colores.acento
+    Logo.Text = "R"
+    Logo.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Logo.TextSize = 72
+    Logo.Font = self.Estilos.fuenteTitulo
+    Logo.BorderSizePixel = 0
+    Logo.BackgroundTransparency = 1
+    Logo.TextTransparency = 1
+    Logo.Parent = LogoContainer
+    
+    local LogoCorner = Instance.new("UICorner")
+    LogoCorner.CornerRadius = UDim.new(0, 20)
+    LogoCorner.Parent = Logo
+    
+    -- Título "Rozek"
+    local Titulo = Instance.new("TextLabel")
+    Titulo.Size = UDim2.new(0, 200, 0, 40)
+    Titulo.Position = UDim2.new(0, 0, 0, 130)
+    Titulo.BackgroundTransparency = 1
+    Titulo.Text = "Rozek"
+    Titulo.TextColor3 = self.Colores.textoPrincipal
+    Titulo.TextSize = 32
+    Titulo.Font = self.Estilos.fuenteTitulo
+    Titulo.TextTransparency = 1
+    Titulo.Parent = LogoContainer
+    
+    -- Subtítulo
+    local Subtitulo = Instance.new("TextLabel")
+    Subtitulo.Size = UDim2.new(0, 200, 0, 20)
+    Subtitulo.Position = UDim2.new(0, 0, 0, 170)
+    Subtitulo.BackgroundTransparency = 1
+    Subtitulo.Text = "Asistente IA v3.2"
+    Subtitulo.TextColor3 = self.Colores.textoSecundario
+    Subtitulo.TextSize = 14
+    Subtitulo.Font = self.Estilos.fuentePrincipal
+    Subtitulo.TextTransparency = 1
+    Subtitulo.Parent = LogoContainer
+    
+    -- Barra de progreso
+    local BarraContainer = Instance.new("Frame")
+    BarraContainer.Size = UDim2.new(0, 300, 0, 4)
+    BarraContainer.Position = UDim2.new(0.5, -150, 0.5, 100)
+    BarraContainer.BackgroundColor3 = self.Colores.bordeOscuro
+    BarraContainer.BorderSizePixel = 0
+    BarraContainer.BackgroundTransparency = 1
+    BarraContainer.Parent = Fondo
+    
+    local BarraCorner = Instance.new("UICorner")
+    BarraCorner.CornerRadius = UDim.new(1, 0)
+    BarraCorner.Parent = BarraContainer
+    
+    local Barra = Instance.new("Frame")
+    Barra.Size = UDim2.new(0, 0, 1, 0)
+    Barra.BackgroundColor3 = self.Colores.acento
+    Barra.BorderSizePixel = 0
+    Barra.Parent = BarraContainer
+    
+    local BarraProgCorner = Instance.new("UICorner")
+    BarraProgCorner.CornerRadius = UDim.new(1, 0)
+    BarraProgCorner.Parent = Barra
+    
+    -- Gradiente en la barra
+    local Gradiente = Instance.new("UIGradient")
+    Gradiente.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, self.Colores.acento),
+        ColorSequenceKeypoint.new(1, self.Colores.acentoGradiente)
+    }
+    Gradiente.Parent = Barra
+    
+    -- Texto de estado
+    local Estado = Instance.new("TextLabel")
+    Estado.Size = UDim2.new(0, 300, 0, 20)
+    Estado.Position = UDim2.new(0.5, -150, 0.5, 120)
+    Estado.BackgroundTransparency = 1
+    Estado.Text = "Iniciando sistema..."
+    Estado.TextColor3 = self.Colores.textoTerciario
+    Estado.TextSize = 12
+    Estado.Font = self.Estilos.fuentePrincipal
+    Estado.TextTransparency = 1
+    Estado.Parent = Fondo
+    
+    -- ANIMACIÓN
+    task.spawn(function()
+        -- Fase 1: Logo fade-in (0.8s)
+        TweenService:Create(Logo, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            BackgroundTransparency = 0,
+            TextTransparency = 0
+        }):Play()
+        
+        TweenService:Create(Titulo, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            TextTransparency = 0
+        }):Play()
+        
+        TweenService:Create(Subtitulo, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            TextTransparency = 0
+        }):Play()
+        
+        task.wait(0.5)
+        
+        -- Fase 2: Barra de progreso (1.2s)
+        TweenService:Create(BarraContainer, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
+        TweenService:Create(Estado, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
+        
+        task.wait(0.3)
+        
+        TweenService:Create(Barra, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
+            Size = UDim2.new(1, 0, 1, 0)
+        }):Play()
+        
+        task.wait(1.2)
+        
+        -- Fase 3: Completado (0.3s)
+        Estado.Text = "¡Listo!"
+        task.wait(0.3)
+        
+        -- Fase 4: Fade-out (0.2s)
+        for _, obj in ipairs({Logo, Titulo, Subtitulo, BarraContainer, Estado}) do
+            TweenService:Create(obj, TweenInfo.new(0.2), {
+                BackgroundTransparency = 1,
+                TextTransparency = 1
+            }):Play()
+        end
+        
+        TweenService:Create(Fondo, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
+        
+        task.wait(0.3)
+        ScreenGui:Destroy()
+        
+        -- Ejecutar callback
+        if callback then callback() end
+    end)
+end
+
+-- ============================================================
+-- FUNCIÓN PRINCIPAL: CREAR VENTANA
 -- ============================================================
 
 function UI:crearVentana(config)
@@ -70,75 +304,88 @@ function UI:crearVentana(config)
     
     local cfg = {
         titulo = config.titulo or "Rozek",
-        subtitulo = config.subtitulo or "Asistente IA v2.1",
+        subtitulo = config.subtitulo or "Asistente IA v3.2",
         ancho = config.ancho or 500,
         alto = config.alto or 600,
         draggable = config.draggable ~= false,
+        mostrarSplash = config.mostrarSplash ~= false,
     }
     
-    -- Limpiar GUI anterior
-    pcall(function()
-        local vieja = game:GetService("CoreGui"):FindFirstChild("RobloxAIConstructor")
-        if vieja then vieja:Destroy() end
-    end)
-    
-    -- ScreenGui principal
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "RobloxAIConstructor"
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.DisplayOrder = 999
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.Parent = game:GetService("CoreGui")
-    
-    -- Frame principal - CENTRADO CORRECTAMENTE
-    local Main = Instance.new("Frame")
-    Main.Name = "Main"
-    Main.Size = UDim2.new(0, cfg.ancho, 0, 0)
-    Main.Position = UDim2.new(0.5, -cfg.ancho/2, 0.5, -cfg.alto/2)  -- CENTRADO
-    Main.AnchorPoint = Vector2.new(0, 0)
-    Main.BackgroundColor3 = self.Colores.fondo
-    Main.BorderSizePixel = 0
-    Main.Active = true
-    Main.Parent = ScreenGui
-    
-    if cfg.draggable then
-        Main.Draggable = true
+    local function crearInterfaz()
+        -- Limpiar GUI anterior
+        pcall(function()
+            local vieja = game:GetService("CoreGui"):FindFirstChild("RobloxAIConstructor")
+            if vieja then vieja:Destroy() end
+        end)
+        
+        -- ScreenGui principal
+        local ScreenGui = Instance.new("ScreenGui")
+        ScreenGui.Name = "RobloxAIConstructor"
+        ScreenGui.ResetOnSpawn = false
+        ScreenGui.DisplayOrder = 999
+        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        ScreenGui.Parent = game:GetService("CoreGui")
+        
+        -- Frame principal - CENTRADO
+        local Main = Instance.new("Frame")
+        Main.Name = "Main"
+        Main.Size = UDim2.new(0, cfg.ancho, 0, 0)
+        Main.Position = UDim2.new(0.5, -cfg.ancho/2, 0.5, -cfg.alto/2)
+        Main.AnchorPoint = Vector2.new(0, 0)
+        Main.BackgroundColor3 = self.Colores.fondo
+        Main.BorderSizePixel = 0
+        Main.Active = true
+        Main.Parent = ScreenGui
+        
+        if cfg.draggable then
+            Main.Draggable = true
+        end
+        
+        local MainCorner = Instance.new("UICorner")
+        MainCorner.CornerRadius = UDim.new(0, self.Estilos.redondeo)
+        MainCorner.Parent = Main
+        
+        local MainStroke = Instance.new("UIStroke")
+        MainStroke.Color = self.Colores.borde
+        MainStroke.Thickness = 1
+        MainStroke.Transparency = 0.5
+        MainStroke.Parent = Main
+        
+        local componentes = {
+            ScreenGui = ScreenGui,
+            Main = Main,
+            Header = nil,
+            ChatArea = nil,
+            InputBox = nil,
+            StatusBar = nil,
+        }
+        
+        -- Crear componentes
+        componentes.Header = self:_crearHeader(Main, cfg)
+        componentes.ChatArea = self:_crearChatArea(Main)
+        componentes.StatusBar = self:_crearStatusBar(Main)
+        componentes.InputBox = self:_crearInput(Main)
+        
+        -- Animación de entrada
+        Main.BackgroundTransparency = 1
+        TweenService:Create(Main, TweenInfo.new(self.Estilos.duracionLenta, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, cfg.ancho, 0, cfg.alto),
+            BackgroundTransparency = 0
+        }):Play()
+        
+        return componentes
     end
     
-    local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, self.Estilos.redondeo)
-    MainCorner.Parent = Main
-    
-    -- Borde sutil
-    local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = self.Colores.borde
-    MainStroke.Thickness = 1
-    MainStroke.Transparency = 0.5
-    MainStroke.Parent = Main
-    
-    local componentes = {
-        ScreenGui = ScreenGui,
-        Main = Main,
-        Header = nil,
-        ChatArea = nil,
-        InputBox = nil,
-        StatusBar = nil,
-    }
-    
-    -- Crear componentes
-    componentes.Header = self:_crearHeader(Main, cfg)
-    componentes.ChatArea = self:_crearChatArea(Main)
-    componentes.StatusBar = self:_crearStatusBar(Main)
-    componentes.InputBox = self:_crearInput(Main)
-    
-    -- Animacion de entrada
-    Main.BackgroundTransparency = 1
-    TweenService:Create(Main, TweenInfo.new(self.Estilos.duracionLenta, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-        Size = UDim2.new(0, cfg.ancho, 0, cfg.alto),
-        BackgroundTransparency = 0
-    }):Play()
-    
-    return componentes
+    -- Mostrar splash screen si está habilitado
+    if cfg.mostrarSplash then
+        self:mostrarSplashScreen(function()
+            task.wait(0.2)
+            return crearInterfaz()
+        end)
+        return nil -- La interfaz se creará después del splash
+    else
+        return crearInterfaz()
+    end
 end
 
 -- ============================================================
@@ -153,7 +400,6 @@ function UI:_crearHeader(parent, config)
     Header.BorderSizePixel = 0
     Header.Parent = parent
     
-    -- Linea divisora
     local Divisor = Instance.new("Frame")
     Divisor.Size = UDim2.new(1, -40, 0, 1)
     Divisor.Position = UDim2.new(0, 20, 1, -1)
@@ -161,7 +407,6 @@ function UI:_crearHeader(parent, config)
     Divisor.BorderSizePixel = 0
     Divisor.Parent = Header
     
-    -- Icono
     local IconContainer = Instance.new("Frame")
     IconContainer.Size = UDim2.new(0, 36, 0, 36)
     IconContainer.Position = UDim2.new(0, 20, 0, 12)
@@ -182,7 +427,6 @@ function UI:_crearHeader(parent, config)
     Icon.Font = self.Estilos.fuenteTitulo
     Icon.Parent = IconContainer
     
-    -- Titulo
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(1, -180, 0, 20)
     Title.Position = UDim2.new(0, 66, 0, 12)
@@ -194,7 +438,6 @@ function UI:_crearHeader(parent, config)
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.Parent = Header
     
-    -- Subtitulo
     local Subtitle = Instance.new("TextLabel")
     Subtitle.Size = UDim2.new(1, -180, 0, 16)
     Subtitle.Position = UDim2.new(0, 66, 0, 34)
@@ -206,13 +449,12 @@ function UI:_crearHeader(parent, config)
     Subtitle.TextXAlignment = Enum.TextXAlignment.Left
     Subtitle.Parent = Header
     
-    -- Boton cerrar
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Size = UDim2.new(0, 36, 0, 36)
     CloseBtn.Position = UDim2.new(1, -56, 0, 12)
     CloseBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     CloseBtn.BackgroundTransparency = 1
-    CloseBtn.Text = "X"
+    CloseBtn.Text = "✕"
     CloseBtn.TextColor3 = self.Colores.textoSecundario
     CloseBtn.TextSize = 16
     CloseBtn.Font = self.Estilos.fuentePrincipal
@@ -252,7 +494,7 @@ end
 function UI:_crearChatArea(parent)
     local ChatArea = Instance.new("ScrollingFrame")
     ChatArea.Name = "ChatArea"
-    ChatArea.Size = UDim2.new(1, -40, 0, 440)  -- ALTURA AJUSTADA
+    ChatArea.Size = UDim2.new(1, -40, 0, 440)
     ChatArea.Position = UDim2.new(0, 20, 0, 72)
     ChatArea.BackgroundColor3 = self.Colores.fondoChat
     ChatArea.BorderSizePixel = 0
@@ -279,7 +521,7 @@ function UI:_crearChatArea(parent)
     
     local ChatPadding = Instance.new("UIPadding")
     ChatPadding.PaddingTop = UDim.new(0, 16)
-    ChatPadding.PaddingBottom = UDim.new(0, 16)
+    ChatPadding.PaddingBottom = UDim2.new(0, 16)
     ChatPadding.PaddingLeft = UDim.new(0, 16)
     ChatPadding.PaddingRight = UDim.new(0, 16)
     ChatPadding.Parent = ChatArea
@@ -294,8 +536,8 @@ end
 function UI:_crearStatusBar(parent)
     local StatusBar = Instance.new("Frame")
     StatusBar.Name = "StatusBar"
-    StatusBar.Size = UDim2.new(1, -40, 0, 24)  -- ALTURA AJUSTADA
-    StatusBar.Position = UDim2.new(0, 20, 0, 520)  -- POSICION AJUSTADA
+    StatusBar.Size = UDim2.new(1, -40, 0, 24)
+    StatusBar.Position = UDim2.new(0, 20, 0, 520)
     StatusBar.BackgroundTransparency = 1
     StatusBar.BorderSizePixel = 0
     StatusBar.Parent = parent
@@ -334,8 +576,8 @@ end
 function UI:_crearInput(parent)
     local InputContainer = Instance.new("Frame")
     InputContainer.Name = "InputContainer"
-    InputContainer.Size = UDim2.new(1, -40, 0, 48)  -- ALTURA AJUSTADA
-    InputContainer.Position = UDim2.new(0, 20, 0, 548)  -- POSICION AJUSTADA (600 - 48 - 4)
+    InputContainer.Size = UDim2.new(1, -40, 0, 48)
+    InputContainer.Position = UDim2.new(0, 20, 0, 548)
     InputContainer.BackgroundColor3 = self.Colores.fondoChat
     InputContainer.BorderSizePixel = 0
     InputContainer.Parent = parent
@@ -386,9 +628,9 @@ function UI:_crearInput(parent)
     SendBtn.Size = UDim2.new(0, 36, 0, 36)
     SendBtn.Position = UDim2.new(1, -42, 0.5, -18)
     SendBtn.BackgroundColor3 = self.Colores.acento
-    SendBtn.Text = ">"
+    SendBtn.Text = "→"
     SendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SendBtn.TextSize = 16
+    SendBtn.TextSize = 18
     SendBtn.Font = self.Estilos.fuenteTitulo
     SendBtn.BorderSizePixel = 0
     SendBtn.AutoButtonColor = false
@@ -414,10 +656,10 @@ function UI:_crearInput(parent)
 end
 
 -- ============================================================
--- CREAR MENSAJE
+-- CREAR MENSAJE CON STREAMING
 -- ============================================================
 
-function UI:crearMensaje(chatArea, config)
+function UI:crearMensajeConStreaming(chatArea, config, callback)
     config = config or {}
     
     local cfg = {
@@ -425,7 +667,11 @@ function UI:crearMensaje(chatArea, config)
         esUsuario = config.esUsuario or false,
         esError = config.esError or false,
         esExito = config.esExito or false,
+        velocidad = config.velocidad or "normal",
     }
+    
+    -- Guardar en memoria
+    self:guardarMensaje(cfg.texto, cfg.esUsuario)
     
     local msgCount = #chatArea:GetChildren() - 2
     
@@ -452,7 +698,7 @@ function UI:crearMensaje(chatArea, config)
     MsgBubble.AutomaticSize = Enum.AutomaticSize.Y
     MsgBubble.BackgroundColor3 = backgroundColor
     MsgBubble.TextColor3 = self.Colores.textoPrincipal
-    MsgBubble.Text = cfg.texto
+    MsgBubble.Text = ""
     MsgBubble.TextSize = self.Estilos.tamanoTexto
     MsgBubble.Font = self.Estilos.fuentePrincipal
     MsgBubble.TextWrapped = true
@@ -474,18 +720,158 @@ function UI:crearMensaje(chatArea, config)
     MsgPadding.PaddingRight = UDim.new(0, 14)
     MsgPadding.Parent = MsgBubble
     
-    TweenService:Create(MsgBubble, TweenInfo.new(self.Estilos.duracionNormal, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-        BackgroundTransparency = 0,
-        TextTransparency = 0
+    -- Fade-in del bubble
+    TweenService:Create(MsgBubble, TweenInfo.new(self.Estilos.duracionRapida), {
+        BackgroundTransparency = 0
     }):Play()
     
+    -- Si es mensaje del usuario, mostrar inmediatamente
+    if cfg.esUsuario then
+        MsgBubble.Text = cfg.texto
+        TweenService:Create(MsgBubble, TweenInfo.new(self.Estilos.duracionRapida), {
+            TextTransparency = 0
+        }):Play()
+        
+        task.wait(0.05)
+        local targetPos = chatArea.AbsoluteCanvasSize.Y
+        TweenService:Create(chatArea, TweenInfo.new(self.Estilos.duracionNormal, Enum.EasingStyle.Quart), {
+            CanvasPosition = Vector2.new(0, targetPos)
+        }):Play()
+        
+        if callback then callback() end
+        return MsgBubble
+    end
+    
+    -- STREAMING para mensajes de la IA
+    TweenService:Create(MsgBubble, TweenInfo.new(0.1), {TextTransparency = 0}):Play()
+    
+    task.spawn(function()
+        local velocidadChar = self.Estilos.streamingNormal
+        if cfg.velocidad == "rapido" then
+            velocidadChar = self.Estilos.streamingRapido
+        elseif cfg.velocidad == "lento" then
+            velocidadChar = self.Estilos.streamingLento
+        end
+        
+        local textoCompleto = cfg.texto
+        local caracteresAMostrar = 0
+        
+        while caracteresAMostrar < #textoCompleto do
+            caracteresAMostrar = caracteresAMostrar + 1
+            MsgBubble.Text = textoCompleto:sub(1, caracteresAMostrar)
+            
+            -- Auto-scroll
+            if caracteresAMostrar % 10 == 0 then
+                local targetPos = chatArea.AbsoluteCanvasSize.Y
+                chatArea.CanvasPosition = Vector2.new(0, targetPos)
+            end
+            
+            task.wait(velocidadChar)
+        end
+        
+        -- Texto completo
+        MsgBubble.Text = textoCompleto
+        
+        -- Scroll final
+        task.wait(0.05)
+        local targetPos = chatArea.AbsoluteCanvasSize.Y
+        TweenService:Create(chatArea, TweenInfo.new(self.Estilos.duracionNormal, Enum.EasingStyle.Quart), {
+            CanvasPosition = Vector2.new(0, targetPos)
+        }):Play()
+        
+        if callback then callback() end
+    end)
+    
+    return MsgBubble
+end
+
+-- ============================================================
+-- CREAR MENSAJE (versión sin streaming, para compatibilidad)
+-- ============================================================
+
+function UI:crearMensaje(chatArea, config)
+    return self:crearMensajeConStreaming(chatArea, config)
+end
+
+-- ============================================================
+-- INDICADOR "PENSANDO..."
+-- ============================================================
+
+function UI:mostrarPensando(chatArea)
+    local msgCount = #chatArea:GetChildren() - 2
+    
+    local MsgContainer = Instance.new("Frame")
+    MsgContainer.Name = "PensandoIndicador"
+    MsgContainer.Size = UDim2.new(1, 0, 0, 0)
+    MsgContainer.AutomaticSize = Enum.AutomaticSize.Y
+    MsgContainer.BackgroundTransparency = 1
+    MsgContainer.LayoutOrder = msgCount
+    MsgContainer.Parent = chatArea
+    
+    local MsgBubble = Instance.new("Frame")
+    MsgBubble.Size = UDim2.new(0, 80, 0, 40)
+    MsgBubble.BackgroundColor3 = self.Colores.mensajeIA
+    MsgBubble.BorderSizePixel = 0
+    MsgBubble.Parent = MsgContainer
+    
+    local MsgCorner = Instance.new("UICorner")
+    MsgCorner.CornerRadius = UDim.new(0, 8)
+    MsgCorner.Parent = MsgBubble
+    
+    -- Contenedor de puntos
+    local PuntosContainer = Instance.new("Frame")
+    PuntosContainer.Size = UDim2.new(0, 50, 0, 20)
+    PuntosContainer.Position = UDim2.new(0.5, -25, 0.5, -10)
+    PuntosContainer.BackgroundTransparency = 1
+    PuntosContainer.Parent = MsgBubble
+    
+    -- Crear 3 puntos
+    local puntos = {}
+    for i = 1, 3 do
+        local punto = Instance.new("Frame")
+        punto.Size = UDim2.new(0, 8, 0, 8)
+        punto.Position = UDim2.new(0, (i-1) * 16 + 5, 0.5, -4)
+        punto.BackgroundColor3 = self.Colores.textoTerciario
+        punto.BorderSizePixel = 0
+        punto.Parent = PuntosContainer
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = punto
+        
+        table.insert(puntos, punto)
+        
+        -- Animación de salto
+        task.spawn(function()
+            while MsgContainer.Parent do
+                TweenService:Create(punto, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
+                    Position = UDim2.new(0, (i-1) * 16 + 5, 0.5, -12)
+                }):Play()
+                task.wait(0.2 * (i-1))
+                task.wait(0.6)
+                TweenService:Create(punto, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
+                    Position = UDim2.new(0, (i-1) * 16 + 5, 0.5, -4)
+                }):Play()
+                task.wait(0.6 + 0.2 * (3-i))
+            end
+        end)
+    end
+    
+    -- Auto-scroll
     task.wait(0.05)
     local targetPos = chatArea.AbsoluteCanvasSize.Y
     TweenService:Create(chatArea, TweenInfo.new(self.Estilos.duracionNormal, Enum.EasingStyle.Quart), {
         CanvasPosition = Vector2.new(0, targetPos)
     }):Play()
     
-    return MsgBubble
+    return MsgContainer
+end
+
+function UI:ocultarPensando(chatArea)
+    local pensando = chatArea:FindFirstChild("PensandoIndicador")
+    if pensando then
+        pensando:Destroy()
+    end
 end
 
 -- ============================================================
@@ -496,7 +882,7 @@ function UI:mostrarNotificacion(config)
     config = config or {}
     
     local cfg = {
-        texto = config.texto or "Notificacion",
+        texto = config.texto or "Notificación",
         tipo = config.tipo or "info",
         duracion = config.duracion or 3,
     }
