@@ -1,14 +1,13 @@
 -- ============================================================
--- UI_LIBRARY.LUA v2.0 - Libreria de Interfaz MEJORADA
--- Modulo 3: Sistema completo de GUI con diseno moderno
+-- UI_LIBRARY.LUA v3.0 - Estilo Claude
+-- Diseno moderno, minimalista y profesional
 -- ============================================================
--- MEJORAS v2.0:
--- Degradados suaves en fondos y bordes
--- Efectos de resplandor (glow) en elementos activos
--- Animaciones mas fluidas y profesionales
--- Sombras y profundidad mejorada
--- Colores mas vibrantes y modernos
--- Transiciones suaves entre estados
+-- Inspirado en la interfaz de Claude AI
+-- - Colores sutiles y sofisticados
+-- - Tipografia clara y legible
+-- - Espaciado generoso
+-- - Animaciones suaves y naturales
+-- - Enfoque en el contenido
 -- ============================================================
 
 local UI = {}
@@ -21,55 +20,56 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
 -- ============================================================
--- CONFIGURACION DE COLORES Y ESTILOS v2.0
+-- PALETA DE COLORES ESTILO CLAUDE
 -- ============================================================
 
 UI.Colores = {
-    -- Colores principales (mas vibrantes)
-    primario = Color3.fromRGB(0, 230, 140),
-    primarioOscuro = Color3.fromRGB(0, 180, 110),
-    secundario = Color3.fromRGB(70, 150, 255),
-    secundarioOscuro = Color3.fromRGB(40, 120, 220),
+    -- Fondo principal (beige claro/crema)
+    fondo = Color3.fromRGB(250, 247, 242),
+    fondoChat = Color3.fromRGB(255, 255, 255),
     
-    -- Fondos con mas contraste
-    fondo = Color3.fromRGB(18, 20, 30),
-    fondoOscuro = Color3.fromRGB(12, 14, 22),
-    fondoClaro = Color3.fromRGB(25, 28, 40),
+    -- Mensajes
+    mensajeIA = Color3.fromRGB(245, 242, 237),      -- Beige muy claro
+    mensajeUsuario = Color3.fromRGB(232, 223, 255),  -- Lavanda suave
     
     -- Texto
-    texto = Color3.fromRGB(245, 250, 255),
-    textoSecundario = Color3.fromRGB(160, 170, 190),
-    textoTerciario = Color3.fromRGB(120, 130, 150),
+    textoPrincipal = Color3.fromRGB(31, 31, 31),     -- Negro suave
+    textoSecundario = Color3.fromRGB(102, 102, 102), -- Gris medio
+    textoTerciario = Color3.fromRGB(153, 153, 153),  -- Gris claro
     
-    -- Estados (mas saturados)
-    exito = Color3.fromRGB(40, 255, 150),
-    error = Color3.fromRGB(255, 70, 90),
-    advertencia = Color3.fromRGB(255, 200, 50),
-    info = Color3.fromRGB(100, 170, 255),
+    -- Acentos
+    acento = Color3.fromRGB(170, 130, 255),          -- Morado Claude
+    acentoHover = Color3.fromRGB(150, 110, 235),
     
-    -- Chat
-    mensajeUsuario = Color3.fromRGB(70, 150, 255),
-    mensajeIA = Color3.fromRGB(35, 40, 55),
-    mensajeExito = Color3.fromRGB(30, 220, 130),
-    mensajeError = Color3.fromRGB(230, 60, 80),
+    -- Bordes y divisores
+    borde = Color3.fromRGB(229, 231, 235),
+    bordeOscuro = Color3.fromRGB(209, 213, 219),
     
-    -- Efectos especiales
-    resplandor = Color3.fromRGB(0, 230, 140),
-    sombra = Color3.fromRGB(0, 0, 0),
+    -- Estados
+    exito = Color3.fromRGB(34, 197, 94),
+    error = Color3.fromRGB(239, 68, 68),
+    advertencia = Color3.fromRGB(245, 158, 11),
 }
 
 UI.Estilos = {
+    -- Tipografia (estilo Claude)
     fuentePrincipal = Enum.Font.Gotham,
     fuenteTitulo = Enum.Font.GothamBold,
-    tamanoTexto = 14,
-    tamanoTitulo = 20,
-    redondeo = 14,
-    padding = 12,
+    tamanoTexto = 15,
+    tamanoTitulo = 18,
     
-    -- Efectos
-    sombra = 4,
-    resplandor = 6,
-    duracionAnimacion = 0.3,
+    -- Espaciado generoso
+    paddingGrande = 24,
+    paddingMedio = 16,
+    paddingPequeno = 12,
+    
+    -- Bordes sutiles
+    redondeo = 12,
+    
+    -- Animaciones suaves
+    duracionRapida = 0.15,
+    duracionNormal = 0.25,
+    duracionLenta = 0.35,
 }
 
 -- ============================================================
@@ -79,14 +79,12 @@ UI.Estilos = {
 function UI:crearVentana(config)
     config = config or {}
     
-    -- Configuracion por defecto
     local cfg = {
         titulo = config.titulo or "IA Constructor",
         subtitulo = config.subtitulo or "Sistema Inteligente v2.1",
-        ancho = config.ancho or 480,
-        alto = config.alto or 640,
+        ancho = config.ancho or 720,
+        alto = config.alto or 840,
         draggable = config.draggable ~= false,
-        minimizable = config.minimizable ~= false,
     }
     
     -- Limpiar GUI anterior
@@ -95,7 +93,7 @@ function UI:crearVentana(config)
         if vieja then vieja:Destroy() end
     end)
     
-    -- Crear ScreenGui principal
+    -- ScreenGui principal
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "RobloxAIConstructor"
     ScreenGui.ResetOnSpawn = false
@@ -117,19 +115,18 @@ function UI:crearVentana(config)
         Main.Draggable = true
     end
     
-    -- Esquinas redondeadas (mas pronunciadas)
+    -- Esquinas redondeadas
     local MainCorner = Instance.new("UICorner")
     MainCorner.CornerRadius = UDim.new(0, self.Estilos.redondeo)
     MainCorner.Parent = Main
     
-    -- Borde con resplandor
+    -- Sombra sutil (borde muy suave)
     local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = self.Colores.primario
-    MainStroke.Thickness = 2.5
-    MainStroke.Transparency = 0
+    MainStroke.Color = self.Colores.bordeOscuro
+    MainStroke.Thickness = 1
+    MainStroke.Transparency = 0.3
     MainStroke.Parent = Main
     
-    -- Contenedor de componentes
     local componentes = {
         ScreenGui = ScreenGui,
         Main = Main,
@@ -139,149 +136,124 @@ function UI:crearVentana(config)
         StatusBar = nil,
     }
     
-    -- Crear header
+    -- Crear componentes
     componentes.Header = self:_crearHeader(Main, cfg)
-    
-    -- Crear area de chat
     componentes.ChatArea = self:_crearChatArea(Main)
-    
-    -- Crear barra de estado
     componentes.StatusBar = self:_crearStatusBar(Main)
-    
-    -- Crear input
     componentes.InputBox = self:_crearInput(Main)
     
-    -- Animacion de entrada mas dramatica
-    Main.Rotation = -5
-    TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    -- Animacion de entrada suave
+    Main.BackgroundTransparency = 1
+    TweenService:Create(Main, TweenInfo.new(self.Estilos.duracionLenta, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
         Size = UDim2.new(0, cfg.ancho, 0, cfg.alto),
         Position = UDim2.new(0.5, -cfg.ancho/2, 0.5, -cfg.alto/2),
-        Rotation = 0
+        BackgroundTransparency = 0
     }):Play()
-    
-    -- Efecto de resplandor pulsante en el borde
-    self:_aplicarResplandorPulsante(MainStroke)
     
     return componentes
 end
 
 -- ============================================================
--- COMPONENTES INTERNOS MEJORADOS
+-- COMPONENTES INTERNOS
 -- ============================================================
 
 function UI:_crearHeader(parent, config)
     local Header = Instance.new("Frame")
     Header.Name = "Header"
-    Header.Size = UDim2.new(1, 0, 0, 60)
-    Header.BackgroundColor3 = self.Colores.primario
+    Header.Size = UDim2.new(1, 0, 0, 72)
+    Header.BackgroundColor3 = self.Colores.fondo
     Header.BorderSizePixel = 0
     Header.Parent = parent
     
-    -- Degradado en el header
-    local Gradient = Instance.new("UIGradient")
-    Gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, self.Colores.primario),
-        ColorSequenceKeypoint.new(1, self.Colores.primarioOscuro)
-    }
-    Gradient.Rotation = 45
-    Gradient.Parent = Header
+    -- Linea divisora inferior
+    local Divisor = Instance.new("Frame")
+    Divisor.Size = UDim2.new(1, -48, 0, 1)
+    Divisor.Position = UDim2.new(0, 24, 1, -1)
+    Divisor.BackgroundColor3 = self.Colores.borde
+    Divisor.BorderSizePixel = 0
+    Divisor.Parent = Header
     
-    local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, self.Estilos.redondeo)
-    HeaderCorner.Parent = Header
-    
-    -- Fix para esquinas inferiores
-    local HeaderFix = Instance.new("Frame")
-    HeaderFix.Size = UDim2.new(1, 0, 0, 20)
-    HeaderFix.Position = UDim2.new(0, 0, 1, -20)
-    HeaderFix.BackgroundColor3 = self.Colores.primario
-    HeaderFix.BorderSizePixel = 0
-    HeaderFix.Parent = Header
-    
-    -- Degradado tambien en el fix
-    local FixGradient = Gradient:Clone()
-    FixGradient.Parent = HeaderFix
-    
-    -- Icono mejorado con resplandor
+    -- Icono minimalista
     local IconContainer = Instance.new("Frame")
-    IconContainer.Size = UDim2.new(0, 45, 0, 45)
-    IconContainer.Position = UDim2.new(0, 12, 0.5, -22.5)
-    IconContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    IconContainer.BackgroundTransparency = 0.85
+    IconContainer.Size = UDim2.new(0, 40, 0, 40)
+    IconContainer.Position = UDim2.new(0, 24, 0, 16)
+    IconContainer.BackgroundColor3 = self.Colores.acento
     IconContainer.BorderSizePixel = 0
     IconContainer.Parent = Header
     
     local IconCorner = Instance.new("UICorner")
-    IconCorner.CornerRadius = UDim.new(0, 12)
+    IconCorner.CornerRadius = UDim.new(0, 8)
     IconCorner.Parent = IconContainer
-    
-    -- Efecto de resplandor en el icono
-    local IconGlow = Instance.new("UIStroke")
-    IconGlow.Color = Color3.fromRGB(255, 255, 255)
-    IconGlow.Thickness = 3
-    IconGlow.Transparency = 0.7
-    IconGlow.Parent = IconContainer
     
     local Icon = Instance.new("TextLabel")
     Icon.Size = UDim2.new(1, 0, 1, 0)
     Icon.BackgroundTransparency = 1
     Icon.Text = "AI"
     Icon.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Icon.TextSize = 20
+    Icon.TextSize = 16
     Icon.Font = self.Estilos.fuenteTitulo
     Icon.Parent = IconContainer
     
-    -- Titulo con sombra de texto
+    -- Titulo estilo Claude
     local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, -200, 0, 26)
-    Title.Position = UDim2.new(0, 68, 0, 10)
+    Title.Size = UDim2.new(1, -220, 0, 24)
+    Title.Position = UDim2.new(0, 76, 0, 16)
     Title.BackgroundTransparency = 1
     Title.Text = config.titulo
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextColor3 = self.Colores.textoPrincipal
     Title.TextSize = self.Estilos.tamanoTitulo
     Title.Font = self.Estilos.fuenteTitulo
     Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.TextStrokeTransparency = 0.8
-    Title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     Title.Parent = Header
     
-    -- Subtitulo mejorado
+    -- Subtitulo
     local Subtitle = Instance.new("TextLabel")
-    Subtitle.Size = UDim2.new(1, -200, 0, 16)
-    Subtitle.Position = UDim2.new(0, 68, 0, 38)
+    Subtitle.Size = UDim2.new(1, -220, 0, 18)
+    Subtitle.Position = UDim2.new(0, 76, 0, 42)
     Subtitle.BackgroundTransparency = 1
     Subtitle.Text = config.subtitulo
-    Subtitle.TextColor3 = Color3.fromRGB(230, 255, 240)
-    Subtitle.TextSize = 12
+    Subtitle.TextColor3 = self.Colores.textoSecundario
+    Subtitle.TextSize = 13
     Subtitle.Font = self.Estilos.fuentePrincipal
     Subtitle.TextXAlignment = Enum.TextXAlignment.Left
-    Subtitle.TextTransparency = 0.25
     Subtitle.Parent = Header
     
-    -- Botones mejorados
-    if config.minimizable then
-        local MinBtn = self:crearBotonModerno({
-            parent = Header,
-            texto = "-",
-            posicion = UDim2.new(1, -72, 0.5, -16),
-            tamano = UDim2.new(0, 32, 0, 32),
-            color = self.Colores.advertencia,
-            callback = function()
-                self:_toggleMinimizar(parent)
-            end
-        })
-    end
+    -- Boton cerrar minimalista
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Size = UDim2.new(0, 40, 0, 40)
+    CloseBtn.Position = UDim2.new(1, -64, 0, 16)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    CloseBtn.BackgroundTransparency = 1
+    CloseBtn.Text = "X"
+    CloseBtn.TextColor3 = self.Colores.textoSecundario
+    CloseBtn.TextSize = 18
+    CloseBtn.Font = self.Estilos.fuentePrincipal
+    CloseBtn.BorderSizePixel = 0
+    CloseBtn.AutoButtonColor = false
+    CloseBtn.Parent = Header
     
-    local CloseBtn = self:crearBotonModerno({
-        parent = Header,
-        texto = "X",
-        posicion = UDim2.new(1, -36, 0.5, -16),
-        tamano = UDim2.new(0, 32, 0, 32),
-        color = self.Colores.error,
-        callback = function()
-            self:cerrarVentana(parent.Parent)
-        end
-    })
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 6)
+    CloseCorner.Parent = CloseBtn
+    
+    -- Hover effect
+    CloseBtn.MouseEnter:Connect(function()
+        TweenService:Create(CloseBtn, TweenInfo.new(self.Estilos.duracionRapida), {
+            BackgroundTransparency = 0.9,
+            TextColor3 = self.Colores.textoPrincipal
+        }):Play()
+    end)
+    
+    CloseBtn.MouseLeave:Connect(function()
+        TweenService:Create(CloseBtn, TweenInfo.new(self.Estilos.duracionRapida), {
+            BackgroundTransparency = 1,
+            TextColor3 = self.Colores.textoSecundario
+        }):Play()
+    end)
+    
+    CloseBtn.MouseButton1Click:Connect(function()
+        self:cerrarVentana(parent.Parent)
+    end)
     
     return Header
 end
@@ -289,37 +261,36 @@ end
 function UI:_crearChatArea(parent)
     local ChatArea = Instance.new("ScrollingFrame")
     ChatArea.Name = "ChatArea"
-    ChatArea.Size = UDim2.new(1, -24, 0, 460)
-    ChatArea.Position = UDim2.new(0, 12, 0, 72)
-    ChatArea.BackgroundColor3 = self.Colores.fondoOscuro
+    ChatArea.Size = UDim2.new(1, -48, 0, 660)
+    ChatArea.Position = UDim2.new(0, 24, 0, 84)
+    ChatArea.BackgroundColor3 = self.Colores.fondoChat
     ChatArea.BorderSizePixel = 0
-    ChatArea.ScrollBarThickness = 8
-    ChatArea.ScrollBarImageColor3 = self.Colores.primario
+    ChatArea.ScrollBarThickness = 6
+    ChatArea.ScrollBarImageColor3 = self.Colores.bordeOscuro
     ChatArea.CanvasSize = UDim2.new(0, 0, 0, 0)
     ChatArea.AutomaticCanvasSize = Enum.AutomaticSize.Y
     ChatArea.Parent = parent
     
     local ChatCorner = Instance.new("UICorner")
-    ChatCorner.CornerRadius = UDim.new(0, 12)
+    ChatCorner.CornerRadius = UDim.new(0, 8)
     ChatCorner.Parent = ChatArea
     
-    -- Borde sutil
+    -- Borde muy sutil
     local ChatStroke = Instance.new("UIStroke")
-    ChatStroke.Color = self.Colores.primario
+    ChatStroke.Color = self.Colores.borde
     ChatStroke.Thickness = 1
-    ChatStroke.Transparency = 0.8
     ChatStroke.Parent = ChatArea
     
     local ChatLayout = Instance.new("UIListLayout")
     ChatLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ChatLayout.Padding = UDim.new(0, 10)
+    ChatLayout.Padding = UDim.new(0, 16)
     ChatLayout.Parent = ChatArea
     
     local ChatPadding = Instance.new("UIPadding")
-    ChatPadding.PaddingTop = UDim.new(0, 12)
-    ChatPadding.PaddingBottom = UDim.new(0, 12)
-    ChatPadding.PaddingLeft = UDim.new(0, 12)
-    ChatPadding.PaddingRight = UDim.new(0, 12)
+    ChatPadding.PaddingTop = UDim.new(0, 20)
+    ChatPadding.PaddingBottom = UDim.new(0, 20)
+    ChatPadding.PaddingLeft = UDim.new(0, 20)
+    ChatPadding.PaddingRight = UDim.new(0, 20)
     ChatPadding.Parent = ChatArea
     
     return ChatArea
@@ -328,124 +299,127 @@ end
 function UI:_crearStatusBar(parent)
     local StatusBar = Instance.new("Frame")
     StatusBar.Name = "StatusBar"
-    StatusBar.Size = UDim2.new(1, -24, 0, 32)
-    StatusBar.Position = UDim2.new(0, 12, 0, 540)
-    StatusBar.BackgroundColor3 = self.Colores.fondoClaro
+    StatusBar.Size = UDim2.new(1, -48, 0, 32)
+    StatusBar.Position = UDim2.new(0, 24, 0, 752)
+    StatusBar.BackgroundTransparency = 1
     StatusBar.BorderSizePixel = 0
     StatusBar.Parent = parent
     
-    local StatusCorner = Instance.new("UICorner")
-    StatusCorner.CornerRadius = UDim.new(0, 10)
-    StatusCorner.Parent = StatusBar
-    
-    -- Borde sutil
-    local StatusStroke = Instance.new("UIStroke")
-    StatusStroke.Color = self.Colores.primario
-    StatusStroke.Thickness = 1
-    StatusStroke.Transparency = 0.85
-    StatusStroke.Parent = StatusBar
-    
-    -- Indicador de estado con resplandor
-    local StatusDotContainer = Instance.new("Frame")
-    StatusDotContainer.Name = "StatusDotContainer"
-    StatusDotContainer.Size = UDim2.new(0, 12, 0, 12)
-    StatusDotContainer.Position = UDim2.new(0, 12, 0.5, -6)
-    StatusDotContainer.BackgroundColor3 = self.Colores.exito
-    StatusDotContainer.BorderSizePixel = 0
-    StatusDotContainer.Parent = StatusBar
+    -- Punto indicador
+    local StatusDot = Instance.new("Frame")
+    StatusDot.Name = "StatusDot"
+    StatusDot.Size = UDim2.new(0, 8, 0, 8)
+    StatusDot.Position = UDim2.new(0, 0, 0.5, -4)
+    StatusDot.BackgroundColor3 = self.Colores.exito
+    StatusDot.BorderSizePixel = 0
+    StatusDot.Parent = StatusBar
     
     local DotCorner = Instance.new("UICorner")
     DotCorner.CornerRadius = UDim.new(1, 0)
-    DotCorner.Parent = StatusDotContainer
-    
-    -- Efecto de resplandor pulsante
-    local DotGlow = Instance.new("UIStroke")
-    DotGlow.Name = "Glow"
-    DotGlow.Color = self.Colores.exito
-    DotGlow.Thickness = 3
-    DotGlow.Transparency = 0.5
-    DotGlow.Parent = StatusDotContainer
+    DotCorner.Parent = StatusDot
     
     -- Texto de estado
     local StatusText = Instance.new("TextLabel")
     StatusText.Name = "StatusText"
-    StatusText.Size = UDim2.new(1, -40, 1, 0)
-    StatusText.Position = UDim2.new(0, 32, 0, 0)
+    StatusText.Size = UDim2.new(1, -16, 1, 0)
+    StatusText.Position = UDim2.new(0, 16, 0, 0)
     StatusText.BackgroundTransparency = 1
-    StatusText.Text = " Sistema listo"
-    StatusText.TextColor3 = self.Colores.texto
+    StatusText.Text = "Listo"
+    StatusText.TextColor3 = self.Colores.textoSecundario
     StatusText.TextSize = 13
     StatusText.Font = self.Estilos.fuentePrincipal
     StatusText.TextXAlignment = Enum.TextXAlignment.Left
     StatusText.Parent = StatusBar
     
-    return {StatusBar = StatusBar, StatusDot = StatusDotContainer, StatusText = StatusText}
+    return {StatusBar = StatusBar, StatusDot = StatusDot, StatusText = StatusText}
 end
 
 function UI:_crearInput(parent)
-    local InputFrame = Instance.new("Frame")
-    InputFrame.Name = "InputFrame"
-    InputFrame.Size = UDim2.new(1, -24, 0, 56)
-    InputFrame.Position = UDim2.new(0, 12, 0, 580)
-    InputFrame.BackgroundColor3 = self.Colores.fondoClaro
-    InputFrame.BorderSizePixel = 0
-    InputFrame.Parent = parent
+    local InputContainer = Instance.new("Frame")
+    InputContainer.Name = "InputContainer"
+    InputContainer.Size = UDim2.new(1, -48, 0, 52)
+    InputContainer.Position = UDim2.new(0, 24, 0, 792)
+    InputContainer.BackgroundColor3 = self.Colores.fondoChat
+    InputContainer.BorderSizePixel = 0
+    InputContainer.Parent = parent
     
     local InputCorner = Instance.new("UICorner")
-    InputCorner.CornerRadius = UDim.new(0, 12)
-    InputCorner.Parent = InputFrame
+    InputCorner.CornerRadius = UDim.new(0, 26)
+    InputCorner.Parent = InputContainer
     
+    -- Borde que cambia en focus
     local InputStroke = Instance.new("UIStroke")
     InputStroke.Name = "InputStroke"
-    InputStroke.Color = self.Colores.primario
-    InputStroke.Thickness = 2
-    InputStroke.Transparency = 0.5
-    InputStroke.Parent = InputFrame
+    InputStroke.Color = self.Colores.borde
+    InputStroke.Thickness = 1.5
+    InputStroke.Parent = InputContainer
     
+    -- TextBox
     local InputBox = Instance.new("TextBox")
     InputBox.Name = "InputBox"
-    InputBox.Size = UDim2.new(1, -75, 1, 0)
-    InputBox.Position = UDim2.new(0, 14, 0, 0)
+    InputBox.Size = UDim2.new(1, -100, 1, 0)
+    InputBox.Position = UDim2.new(0, 20, 0, 0)
     InputBox.BackgroundTransparency = 1
-    InputBox.TextColor3 = self.Colores.texto
-    InputBox.PlaceholderText = " Escribe tu comando aqui..."
+    InputBox.TextColor3 = self.Colores.textoPrincipal
+    InputBox.PlaceholderText = "Escribe un comando..."
     InputBox.PlaceholderColor3 = self.Colores.textoTerciario
     InputBox.Text = ""
     InputBox.TextSize = self.Estilos.tamanoTexto
     InputBox.Font = self.Estilos.fuentePrincipal
     InputBox.TextXAlignment = Enum.TextXAlignment.Left
     InputBox.ClearTextOnFocus = false
-    InputBox.Parent = InputFrame
+    InputBox.Parent = InputContainer
     
-    -- Efecto de focus en el input
+    -- Efectos de focus
     InputBox.Focused:Connect(function()
-        TweenService:Create(InputStroke, TweenInfo.new(0.2), {
-            Transparency = 0,
-            Thickness = 2.5
-        }):Play()
-    end)
-    
-    InputBox.FocusLost:Connect(function()
-        TweenService:Create(InputStroke, TweenInfo.new(0.2), {
-            Transparency = 0.5,
+        TweenService:Create(InputStroke, TweenInfo.new(self.Estilos.duracionRapida), {
+            Color = self.Colores.acento,
             Thickness = 2
         }):Play()
     end)
     
-    local SendBtn = self:crearBotonModerno({
-        parent = InputFrame,
-        texto = ">",
-        posicion = UDim2.new(1, -60, 0.5, -22),
-        tamano = UDim2.new(0, 54, 0, 44),
-        color = self.Colores.primario,
-        textoTamano = 20
-    })
+    InputBox.FocusLost:Connect(function()
+        TweenService:Create(InputStroke, TweenInfo.new(self.Estilos.duracionRapida), {
+            Color = self.Colores.borde,
+            Thickness = 1.5
+        }):Play()
+    end)
     
-    return {InputFrame = InputFrame, InputBox = InputBox, SendBtn = SendBtn}
+    -- Boton enviar estilo Claude
+    local SendBtn = Instance.new("TextButton")
+    SendBtn.Size = UDim2.new(0, 40, 0, 40)
+    SendBtn.Position = UDim2.new(1, -46, 0.5, -20)
+    SendBtn.BackgroundColor3 = self.Colores.acento
+    SendBtn.Text = ">"
+    SendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SendBtn.TextSize = 18
+    SendBtn.Font = self.Estilos.fuenteTitulo
+    SendBtn.BorderSizePixel = 0
+    SendBtn.AutoButtonColor = false
+    SendBtn.Parent = InputContainer
+    
+    local SendCorner = Instance.new("UICorner")
+    SendCorner.CornerRadius = UDim.new(1, 0)
+    SendCorner.Parent = SendBtn
+    
+    -- Hover effect
+    SendBtn.MouseEnter:Connect(function()
+        TweenService:Create(SendBtn, TweenInfo.new(self.Estilos.duracionRapida), {
+            BackgroundColor3 = self.Colores.acentoHover
+        }):Play()
+    end)
+    
+    SendBtn.MouseLeave:Connect(function()
+        TweenService:Create(SendBtn, TweenInfo.new(self.Estilos.duracionRapida), {
+            BackgroundColor3 = self.Colores.acento
+        }):Play()
+    end)
+    
+    return {InputFrame = InputContainer, InputBox = InputBox, SendBtn = SendBtn}
 end
 
 -- ============================================================
--- FUNCION: CREAR MENSAJE EN CHAT (MEJORADO)
+-- FUNCION: CREAR MENSAJE ESTILO CLAUDE
 -- ============================================================
 
 function UI:crearMensaje(chatArea, config)
@@ -460,166 +434,72 @@ function UI:crearMensaje(chatArea, config)
     
     local msgCount = #chatArea:GetChildren() - 2
     
-    local MsgFrame = Instance.new("Frame")
-    MsgFrame.Size = UDim2.new(1, 0, 0, 0)
-    MsgFrame.AutomaticSize = Enum.AutomaticSize.Y
-    MsgFrame.BackgroundTransparency = 1
-    MsgFrame.LayoutOrder = msgCount
-    MsgFrame.Parent = chatArea
+    -- Container del mensaje
+    local MsgContainer = Instance.new("Frame")
+    MsgContainer.Size = UDim2.new(1, 0, 0, 0)
+    MsgContainer.AutomaticSize = Enum.AutomaticSize.Y
+    MsgContainer.BackgroundTransparency = 1
+    MsgContainer.LayoutOrder = msgCount
+    MsgContainer.Parent = chatArea
     
-    -- Color segun tipo
+    -- Color de fondo segun tipo
     local backgroundColor
     if cfg.esUsuario then
         backgroundColor = self.Colores.mensajeUsuario
     elseif cfg.esError then
-        backgroundColor = self.Colores.mensajeError
+        backgroundColor = Color3.fromRGB(254, 242, 242)
     elseif cfg.esExito then
-        backgroundColor = self.Colores.mensajeExito
+        backgroundColor = Color3.fromRGB(240, 253, 244)
     else
         backgroundColor = self.Colores.mensajeIA
     end
     
-    local MsgLabel = Instance.new("TextLabel")
-    MsgLabel.Size = UDim2.new(0.88, 0, 0, 0)
-    MsgLabel.AutomaticSize = Enum.AutomaticSize.Y
-    MsgLabel.Position = cfg.esUsuario and UDim2.new(0.12, 0, 0, 0) or UDim2.new(0, 0, 0, 0)
-    MsgLabel.BackgroundColor3 = backgroundColor
-    MsgLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    MsgLabel.Text = cfg.texto
-    MsgLabel.TextSize = self.Estilos.tamanoTexto
-    MsgLabel.Font = self.Estilos.fuentePrincipal
-    MsgLabel.TextWrapped = true
-    MsgLabel.TextXAlignment = Enum.TextXAlignment.Left
-    MsgLabel.TextYAlignment = Enum.TextYAlignment.Top
-    MsgLabel.BorderSizePixel = 0
-    MsgLabel.BackgroundTransparency = 1
-    MsgLabel.TextTransparency = 1
-    MsgLabel.Parent = MsgFrame
+    -- Bubble del mensaje
+    local MsgBubble = Instance.new("TextLabel")
+    MsgBubble.Size = UDim2.new(1, 0, 0, 0)
+    MsgBubble.AutomaticSize = Enum.AutomaticSize.Y
+    MsgBubble.BackgroundColor3 = backgroundColor
+    MsgBubble.TextColor3 = self.Colores.textoPrincipal
+    MsgBubble.Text = cfg.texto
+    MsgBubble.TextSize = self.Estilos.tamanoTexto
+    MsgBubble.Font = self.Estilos.fuentePrincipal
+    MsgBubble.TextWrapped = true
+    MsgBubble.TextXAlignment = Enum.TextXAlignment.Left
+    MsgBubble.TextYAlignment = Enum.TextYAlignment.Top
+    MsgBubble.BorderSizePixel = 0
+    MsgBubble.BackgroundTransparency = 1
+    MsgBubble.TextTransparency = 1
+    MsgBubble.Parent = MsgContainer
     
     local MsgCorner = Instance.new("UICorner")
-    MsgCorner.CornerRadius = UDim.new(0, 12)
-    MsgCorner.Parent = MsgLabel
-    
-    -- Degradado sutil en mensajes del usuario
-    if cfg.esUsuario then
-        local MsgGradient = Instance.new("UIGradient")
-        MsgGradient.Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, backgroundColor),
-            ColorSequenceKeypoint.new(1, self:_ajustarBrillo(backgroundColor, 0.85))
-        }
-        MsgGradient.Rotation = 135
-        MsgGradient.Parent = MsgLabel
-    end
+    MsgCorner.CornerRadius = UDim.new(0, 8)
+    MsgCorner.Parent = MsgBubble
     
     local MsgPadding = Instance.new("UIPadding")
-    MsgPadding.PaddingTop = UDim.new(0, 12)
-    MsgPadding.PaddingBottom = UDim.new(0, 12)
-    MsgPadding.PaddingLeft = UDim.new(0, 14)
-    MsgPadding.PaddingRight = UDim.new(0, 14)
-    MsgPadding.Parent = MsgLabel
+    MsgPadding.PaddingTop = UDim.new(0, 16)
+    MsgPadding.PaddingBottom = UDim.new(0, 16)
+    MsgPadding.PaddingLeft = UDim.new(0, 16)
+    MsgPadding.PaddingRight = UDim.new(0, 16)
+    MsgPadding.Parent = MsgBubble
     
-    -- Animacion de entrada mas suave
-    MsgLabel.Position = cfg.esUsuario and UDim2.new(0.12, 20, 0, 0) or UDim2.new(0, -20, 0, 0)
-    
-    TweenService:Create(MsgLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+    -- Animacion de entrada suave
+    TweenService:Create(MsgBubble, TweenInfo.new(self.Estilos.duracionNormal, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
         BackgroundTransparency = 0,
-        TextTransparency = 0,
-        Position = cfg.esUsuario and UDim2.new(0.12, 0, 0, 0) or UDim2.new(0, 0, 0, 0)
+        TextTransparency = 0
     }):Play()
     
-    -- Scroll automatico suave
+    -- Scroll automatico
     task.wait(0.05)
     local targetPos = chatArea.AbsoluteCanvasSize.Y
-    TweenService:Create(chatArea, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+    TweenService:Create(chatArea, TweenInfo.new(self.Estilos.duracionNormal, Enum.EasingStyle.Quart), {
         CanvasPosition = Vector2.new(0, targetPos)
     }):Play()
     
-    return MsgLabel
+    return MsgBubble
 end
 
 -- ============================================================
--- FUNCION: CREAR BOTON MODERNO (NUEVA)
--- ============================================================
-
-function UI:crearBotonModerno(config)
-    config = config or {}
-    
-    local Boton = Instance.new("TextButton")
-    Boton.Size = config.tamano or UDim2.new(0, 100, 0, 40)
-    Boton.Position = config.posicion or UDim2.new(0, 0, 0, 0)
-    Boton.BackgroundColor3 = config.color or self.Colores.primario
-    Boton.Text = config.texto or "Boton"
-    Boton.TextColor3 = config.textoColor or Color3.fromRGB(255, 255, 255)
-    Boton.TextSize = config.textoTamano or 16
-    Boton.Font = self.Estilos.fuenteTitulo
-    Boton.BorderSizePixel = 0
-    Boton.AutoButtonColor = false
-    Boton.Parent = config.parent
-    
-    local BotonCorner = Instance.new("UICorner")
-    BotonCorner.CornerRadius = UDim.new(config.redondeo or 0.25, 0)
-    BotonCorner.Parent = Boton
-    
-    -- Degradado
-    local BtnGradient = Instance.new("UIGradient")
-    BtnGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, config.color or self.Colores.primario),
-        ColorSequenceKeypoint.new(1, self:_ajustarBrillo(config.color or self.Colores.primario, 0.85))
-    }
-    BtnGradient.Rotation = 90
-    BtnGradient.Parent = Boton
-    
-    -- Efecto de resplandor
-    local BtnGlow = Instance.new("UIStroke")
-    BtnGlow.Color = config.color or self.Colores.primario
-    BtnGlow.Thickness = 0
-    BtnGlow.Transparency = 0.5
-    BtnGlow.Parent = Boton
-    
-    -- Efectos hover mejorados
-    Boton.MouseEnter:Connect(function()
-        TweenService:Create(Boton, TweenInfo.new(0.2), {
-            Size = config.tamano and (config.tamano + UDim2.new(0, 4, 0, 4)) or UDim2.new(0, 104, 0, 44)
-        }):Play()
-        
-        TweenService:Create(BtnGlow, TweenInfo.new(0.2), {
-            Thickness = 4
-        }):Play()
-    end)
-    
-    Boton.MouseLeave:Connect(function()
-        TweenService:Create(Boton, TweenInfo.new(0.2), {
-            Size = config.tamano or UDim2.new(0, 100, 0, 40)
-        }):Play()
-        
-        TweenService:Create(BtnGlow, TweenInfo.new(0.2), {
-            Thickness = 0
-        }):Play()
-    end)
-    
-    -- Click con animacion
-    Boton.MouseButton1Down:Connect(function()
-        TweenService:Create(Boton, TweenInfo.new(0.1), {
-            Size = config.tamano and (config.tamano - UDim2.new(0, 2, 0, 2)) or UDim2.new(0, 98, 0, 38)
-        }):Play()
-    end)
-    
-    Boton.MouseButton1Up:Connect(function()
-        TweenService:Create(Boton, TweenInfo.new(0.1), {
-            Size = config.tamano or UDim2.new(0, 100, 0, 40)
-        }):Play()
-    end)
-    
-    -- Click callback
-    if config.callback then
-        Boton.MouseButton1Click:Connect(config.callback)
-    end
-    
-    return Boton
-end
-
--- ============================================================
--- FUNCION: NOTIFICACION MEJORADA
+-- FUNCION: NOTIFICACION ESTILO TOAST
 -- ============================================================
 
 function UI:mostrarNotificacion(config)
@@ -631,97 +511,60 @@ function UI:mostrarNotificacion(config)
         duracion = config.duracion or 3,
     }
     
-    -- Color segun tipo
     local color
-    local icono
-    if cfg.tipo == "exito" then 
-        color = self.Colores.exito
-        icono = "OK"
-    elseif cfg.tipo == "error" then 
-        color = self.Colores.error
-        icono = "ERR"
-    elseif cfg.tipo == "advertencia" then 
-        color = self.Colores.advertencia
-        icono = "!"
-    else 
-        color = self.Colores.info
-        icono = "i"
-    end
+    if cfg.tipo == "exito" then color = self.Colores.exito
+    elseif cfg.tipo == "error" then color = self.Colores.error
+    elseif cfg.tipo == "advertencia" then color = self.Colores.advertencia
+    else color = self.Colores.textoPrincipal end
     
     local ScreenGui = game:GetService("CoreGui"):FindFirstChild("RobloxAIConstructor") or Instance.new("ScreenGui", game:GetService("CoreGui"))
     
-    local Notif = Instance.new("Frame")
-    Notif.Size = UDim2.new(0, 0, 0, 0)
-    Notif.Position = UDim2.new(1, -20, 0, 20)
-    Notif.BackgroundColor3 = self.Colores.fondo
-    Notif.BorderSizePixel = 0
-    Notif.Parent = ScreenGui
+    local Toast = Instance.new("Frame")
+    Toast.Size = UDim2.new(0, 0, 0, 0)
+    Toast.Position = UDim2.new(0.5, 0, 1, -100)
+    Toast.AnchorPoint = Vector2.new(0.5, 0)
+    Toast.BackgroundColor3 = self.Colores.textoPrincipal
+    Toast.BorderSizePixel = 0
+    Toast.Parent = ScreenGui
     
-    local NotifCorner = Instance.new("UICorner")
-    NotifCorner.CornerRadius = UDim.new(0, 12)
-    NotifCorner.Parent = Notif
+    local ToastCorner = Instance.new("UICorner")
+    ToastCorner.CornerRadius = UDim.new(0, 8)
+    ToastCorner.Parent = Toast
     
-    -- Borde de color
-    local NotifStroke = Instance.new("UIStroke")
-    NotifStroke.Color = color
-    NotifStroke.Thickness = 2.5
-    NotifStroke.Parent = Notif
-    
-    -- Barra lateral de color
-    local ColorBar = Instance.new("Frame")
-    ColorBar.Size = UDim2.new(0, 4, 1, 0)
-    ColorBar.BackgroundColor3 = color
-    ColorBar.BorderSizePixel = 0
-    ColorBar.Parent = Notif
-    
-    local BarCorner = Instance.new("UICorner")
-    BarCorner.CornerRadius = UDim.new(0, 12)
-    BarCorner.Parent = ColorBar
-    
-    -- Icono
-    local NotifIcon = Instance.new("TextLabel")
-    NotifIcon.Size = UDim2.new(0, 30, 0, 30)
-    NotifIcon.Position = UDim2.new(0, 12, 0.5, -15)
-    NotifIcon.BackgroundTransparency = 1
-    NotifIcon.Text = icono
-    NotifIcon.TextSize = 20
-    NotifIcon.Font = self.Estilos.fuenteTitulo
-    NotifIcon.Parent = Notif
-    
-    -- Texto
-    local NotifText = Instance.new("TextLabel")
-    NotifText.Size = UDim2.new(1, -55, 1, -10)
-    NotifText.Position = UDim2.new(0, 48, 0, 5)
-    NotifText.BackgroundTransparency = 1
-    NotifText.Text = cfg.texto
-    NotifText.TextColor3 = self.Colores.texto
-    NotifText.TextSize = 14
-    NotifText.Font = self.Estilos.fuentePrincipal
-    NotifText.TextWrapped = true
-    NotifText.TextXAlignment = Enum.TextXAlignment.Left
-    NotifText.TextYAlignment = Enum.TextYAlignment.Center
-    NotifText.Parent = Notif
+    local ToastText = Instance.new("TextLabel")
+    ToastText.Size = UDim2.new(1, -32, 1, 0)
+    ToastText.Position = UDim2.new(0, 16, 0, 0)
+    ToastText.BackgroundTransparency = 1
+    ToastText.Text = cfg.texto
+    ToastText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToastText.TextSize = 14
+    ToastText.Font = self.Estilos.fuentePrincipal
+    ToastText.TextXAlignment = Enum.TextXAlignment.Center
+    ToastText.Parent = Toast
     
     -- Animacion entrada
-    TweenService:Create(Notif, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Size = UDim2.new(0, 320, 0, 70),
-        Position = UDim2.new(1, -340, 0, 20)
+    TweenService:Create(Toast, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 300, 0, 48)
     }):Play()
     
-    -- Auto-destruir con animacion
+    -- Auto-destruir
     task.delay(cfg.duracion, function()
-        TweenService:Create(Notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Position = UDim2.new(1, 20, 0, 20),
-            Size = UDim2.new(0, 0, 0, 70)
+        TweenService:Create(Toast, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 0, 0, 48),
+            BackgroundTransparency = 1
         }):Play()
         
-        task.wait(0.35)
-        Notif:Destroy()
+        TweenService:Create(ToastText, TweenInfo.new(0.25), {
+            TextTransparency = 1
+        }):Play()
+        
+        task.wait(0.3)
+        Toast:Destroy()
     end)
 end
 
 -- ============================================================
--- FUNCION: ACTUALIZAR ESTADO (MEJORADO)
+-- FUNCION: ACTUALIZAR ESTADO
 -- ============================================================
 
 function UI:actualizarEstado(statusComponents, estado, mensaje)
@@ -732,117 +575,10 @@ function UI:actualizarEstado(statusComponents, estado, mensaje)
         exito = self.Colores.exito,
     }
     
-    local iconos = {
-        listo = "OK",
-        pensando = "...",
-        error = "ERR",
-        exito = "OK"
-    }
+    local color = colores[estado] or self.Colores.textoSecundario
     
-    local color = colores[estado] or self.Colores.info
-    local icono = iconos[estado] or ""
-    
-    -- Actualizar color con transicion
-    TweenService:Create(statusComponents.StatusDot, TweenInfo.new(0.3), {
+    TweenService:Create(statusComponents.StatusDot, TweenInfo.new(self.Estilos.duracionRapida), {
         BackgroundColor3 = color
     }):Play()
     
-    local glow = statusComponents.StatusDot:FindFirstChild("Glow")
-    if glow then
-        TweenService:Create(glow, TweenInfo.new(0.3), {
-            Color = color
-        }):Play()
-    end
-    
-    statusComponents.StatusText.Text = icono .. " " .. (mensaje or estado)
-    
-    -- Animacion de pulso mejorada si esta pensando
-    if estado == "pensando" then
-        if glow then
-            local pulso = TweenService:Create(
-                glow,
-                TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-                {Thickness = 6, Transparency = 0.2}
-            )
-            pulso:Play()
-            statusComponents.StatusDot:SetAttribute("Pulso", pulso)
-        end
-    else
-        local pulso = statusComponents.StatusDot:GetAttribute("Pulso")
-        if pulso then
-            pulso:Cancel()
-            if glow then
-                TweenService:Create(glow, TweenInfo.new(0.3), {
-                    Thickness = 3,
-                    Transparency = 0.5
-                }):Play()
-            end
-        end
-    end
-end
-
--- ============================================================
--- FUNCIONES AUXILIARES NUEVAS
--- ============================================================
-
-function UI:_aplicarResplandorPulsante(stroke)
-    spawn(function()
-        while stroke and stroke.Parent do
-            TweenService:Create(stroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-                Transparency = 0.3
-            }):Play()
-            task.wait(1.5)
-            TweenService:Create(stroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-                Transparency = 0
-            }):Play()
-            task.wait(1.5)
-        end
-    end)
-end
-
-function UI:_toggleMinimizar(ventana)
-    local estaMinimizado = ventana:GetAttribute("Minimizado") or false
-    
-    local ti = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-    
-    if estaMinimizado then
-        TweenService:Create(ventana, ti, {
-            Size = UDim2.new(0, ventana:GetAttribute("AnchoOriginal"), 0, ventana:GetAttribute("AltoOriginal"))
-        }):Play()
-        ventana:SetAttribute("Minimizado", false)
-    else
-        ventana:SetAttribute("AnchoOriginal", ventana.Size.X.Offset)
-        ventana:SetAttribute("AltoOriginal", ventana.Size.Y.Offset)
-        
-        TweenService:Create(ventana, ti, {
-            Size = UDim2.new(0, ventana.Size.X.Offset, 0, 60)
-        }):Play()
-        ventana:SetAttribute("Minimizado", true)
-    end
-end
-
-function UI:cerrarVentana(screenGui)
-    local main = screenGui:FindFirstChild("Main")
-    if main then
-        TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-            Size = UDim2.new(0, 0, 0, 0),
-            Rotation = 5
-        }):Play()
-        
-        task.wait(0.35)
-    end
-    
-    screenGui:Destroy()
-end
-
-function UI:_ajustarBrillo(color, factor)
-    local h, s, v = color:ToHSV()
-    v = math.clamp(v * factor, 0, 1)
-    return Color3.fromHSV(h, s, v)
-end
-
--- ============================================================
--- RETORNAR MODULO
--- ============================================================
-
-return UI
+    statusComponen
