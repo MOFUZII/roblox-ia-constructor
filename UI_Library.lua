@@ -581,4 +581,46 @@ function UI:actualizarEstado(statusComponents, estado, mensaje)
         BackgroundColor3 = color
     }):Play()
     
-    statusComponen
+    statusComponents.StatusText.Text = mensaje or estado
+    
+    -- Animacion de pulso si esta pensando
+    if estado == "pensando" then
+        local pulso = TweenService:Create(
+            statusComponents.StatusDot,
+            TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true),
+            {BackgroundTransparency = 0.3}
+        )
+        pulso:Play()
+        statusComponents.StatusDot:SetAttribute("Pulso", pulso)
+    else
+        local pulso = statusComponents.StatusDot:GetAttribute("Pulso")
+        if pulso then
+            pulso:Cancel()
+        end
+        statusComponents.StatusDot.BackgroundTransparency = 0
+    end
+end
+
+-- ============================================================
+-- FUNCIONES AUXILIARES
+-- ============================================================
+
+function UI:cerrarVentana(screenGui)
+    local main = screenGui:FindFirstChild("Main")
+    if main then
+        TweenService:Create(main, TweenInfo.new(self.Estilos.duracionNormal, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, main.Size.X.Offset, 0, 0),
+            BackgroundTransparency = 1
+        }):Play()
+        
+        task.wait(0.3)
+    end
+    
+    screenGui:Destroy()
+end
+
+-- ============================================================
+-- RETORNAR MODULO
+-- ============================================================
+
+return UI
