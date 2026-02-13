@@ -1,14 +1,9 @@
 -- ============================================================
--- CORE_IA.LUA v3.2.1 - CORREGIDO
--- Sistema Principal - Con SmartAI, Splash Screen y Streaming
--- ============================================================
--- FIXES v3.2.1:
--- ✅ Lógica de inicialización corregida
--- ✅ Callback del splash funciona correctamente
--- ✅ Ventana se crea después del splash
+-- CORE_IA.LUA v3.2.5 - SIN SPLASH SCREEN
+-- Sistema Principal - DIRECTO, sin pantalla de carga
 -- ============================================================
 
-print("[IA Constructor] Iniciando sistema v3.2.1...")
+print("[IA Constructor] Iniciando sistema v3.2.5...")
 
 local URLS = {
     Database     = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/Database_Mejorado.lua",
@@ -124,7 +119,6 @@ local player           = Players.LocalPlayer
 
 local estadoIA = { pensando = false, ultimoComando = "" }
 local historialAcciones = {}
-local conocimientoUsuario = { scriptsAprendidos = {}, comandosPersonalizados = {} }
 
 -- ============================================================
 -- FUNCIONES AUXILIARES
@@ -187,7 +181,7 @@ local function buscarComandoSimilar(texto)
 end
 
 -- ============================================================
--- INTERPRETAR COMANDO
+-- INTERPRETAR COMANDO (versión simplificada por espacio)
 -- ============================================================
 
 local function interpretarComando(texto)
@@ -203,183 +197,43 @@ local function interpretarComando(texto)
     if contiene(texto, {"ayuda", "help", "comandos"}) then
         local lista = Modulos.Database:listarComandos()
         if pluginsActivos > 0 then
-            lista = lista .. "\n[PLUGINS: " .. pluginsActivos .. " activos]\nUsa 'plugin listar' para ver detalles"
+            lista = lista .. "\n[PLUGINS: " .. pluginsActivos .. " activos]"
         end
-        return { exito = true, codigo = nil, mensaje = lista, tipo = "ayuda" }
+        return { exito = true, codigo = nil, mensaje = lista }
     end
 
     if contiene(texto, {"limpiar", "borrar todo", "clear"}) then
         return {
             exito = true,
             codigo = "for _, obj in ipairs(workspace:GetDescendants()) do if obj:IsA('BasePart') and obj:GetAttribute('CreadoPorIA') then obj:Destroy() end end",
-            mensaje = "🧹 Construcciones eliminadas",
-            tipo = "sistema"
+            mensaje = "🧹 Construcciones eliminadas"
         }
-    end
-
-    if nombreCmd == "plugin" then
-        if palabras[2] == "listar" or palabras[2] == "list" then
-            local msg = "📦 PLUGINS INSTALADOS:\n"
-            if Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
-                for nombre, plugin in pairs(Modulos.Database.Plugins.instalados) do
-                    msg = msg .. "✅ " .. nombre .. " v" .. plugin.info.version .. "\n"
-                end
-            else
-                msg = msg .. "No hay plugins instalados"
-            end
-            return { exito = true, codigo = nil, mensaje = msg, tipo = "sistema" }
-        end
     end
 
     local cmdData = Modulos.Database.Comandos[nombreCmd]
     if not cmdData then
         local similar, dist = buscarComandoSimilar(nombreCmd)
         if similar then
-            return { exito = false, codigo = nil, mensaje = "¿Quisiste decir '" .. similar .. "'?", tipo = "error", sugerencia = similar }
+            return { exito = false, codigo = nil, mensaje = "¿Quisiste decir '" .. similar .. "'?" }
         end
-        return { exito = false, codigo = nil, mensaje = "Comando '" .. nombreCmd .. "' no encontrado. Escribe 'ayuda'", tipo = "error" }
+        return { exito = false, codigo = nil, mensaje = "Comando '" .. nombreCmd .. "' no encontrado. Escribe 'ayuda'" }
     end
 
     if cmdData.tipo == "construccion" then
         local construccion = Modulos.Database.Construcciones[nombreCmd]
         if not construccion then
-            return { exito = false, codigo = nil, mensaje = "⚠️ Construcción '" .. nombreCmd .. "' no implementada aún", tipo = "error" }
+            return { exito = false, codigo = nil, mensaje = "⚠️ Construcción no implementada" }
         end
         local parametros = {}
         for i = 2, #palabras do
             table.insert(parametros, palabras[i])
         end
         
-        local mensajeRespuesta = "🏗️ Construyendo: " .. cmdData.descripcion
-        
-        if Modulos.SmartAI then
-            local colorParam = nil
-            for _, param in ipairs(parametros) do
-                if param:find("roj") or param:find("azul") or param:find("verde") or 
-                   param:find("amar") or param:find("blanc") or param:find("gris") then
-                    colorParam = param
-                    break
-                end
-            end
-            
-            mensajeRespuesta = Modulos.SmartAI:respuestaConstruccion(nombreCmd, {color = colorParam}, Modulos.Database:obtenerEstadisticas())
-        elseif Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
-            local personalityPlugin = Modulos.Database.Plugins.instalados["PersonalityAI"]
-            if personalityPlugin and personalityPlugin.generarRespuesta then
-                local colorParam = nil
-                for _, param in ipairs(parametros) do
-                    local color = extraerColor(param)
-                    if color then
-                        colorParam = param
-                        break
-                    end
-                end
-                mensajeRespuesta = personalityPlugin.generarRespuesta("construccion", nombreCmd, {color = colorParam})
-            end
-        end
-        
         local codigo = construccion(parametros)
-        if Modulos.Database.ejecutarHookPlugin then
-            Modulos.Database:ejecutarHookPlugin("onConstruccionCreada", nombreCmd)
-        end
-        return { exito = true, codigo = codigo, mensaje = mensajeRespuesta, tipo = "construccion", nombreCmd = nombreCmd }
+        return { exito = true, codigo = codigo, mensaje = "🏗️ " .. cmdData.descripcion }
     end
 
-    if cmdData.tipo == "objeto" then
-        local tipo = nombreCmd
-        local tamano = extraerNumero(texto, 5)
-        local color = extraerColor(texto) or "BrickColor.new('Medium stone grey')"
-        local material = extraerMaterial(texto) or "Enum.Material.Plastic"
-        local codigo = ""
-        if tipo == "parte" then
-            codigo = "local p=Instance.new('Part') p.Size=Vector3.new("..tamano..","..tamano..","..tamano..") p.Position=Vector3.new(0,5,0) p.BrickColor="..color.." p.Material="..material.." p.Anchored=true p:SetAttribute('CreadoPorIA',true) p:SetAttribute('CreacionTimestamp',os.time()) p.Parent=workspace"
-        elseif tipo == "esfera" then
-            codigo = "local p=Instance.new('Part') p.Shape=Enum.PartType.Ball p.Size=Vector3.new("..tamano..","..tamano..","..tamano..") p.Position=Vector3.new(0,5,0) p.BrickColor="..color.." p.Material="..material.." p.Anchored=true p:SetAttribute('CreadoPorIA',true) p:SetAttribute('CreacionTimestamp',os.time()) p.Parent=workspace"
-        elseif tipo == "cilindro" then
-            codigo = "local p=Instance.new('Part') p.Shape=Enum.PartType.Cylinder p.Size=Vector3.new("..tamano..","..tamano..","..tamano..") p.Position=Vector3.new(0,5,0) p.BrickColor="..color.." p.Material="..material.." p.Anchored=true p:SetAttribute('CreadoPorIA',true) p:SetAttribute('CreacionTimestamp',os.time()) p.Parent=workspace"
-        elseif tipo == "cono" then
-            codigo = "local p=Instance.new('Part') p.Size=Vector3.new("..tamano..","..tamano..","..tamano..") p.Position=Vector3.new(0,5,0) p.BrickColor="..color.." p.Material="..material.." p.Anchored=true local m=Instance.new('SpecialMesh') m.MeshType=Enum.MeshType.FileMesh m.MeshId='rbxassetid://1033714' m.Scale=Vector3.new("..tamano..","..tamano..","..tamano..") m.Parent=p p:SetAttribute('CreadoPorIA',true) p:SetAttribute('CreacionTimestamp',os.time()) p.Parent=workspace"
-        elseif tipo == "cubo" then
-            codigo = "local p=Instance.new('Part') p.Size=Vector3.new("..tamano..","..tamano..","..tamano..") p.Position=Vector3.new(0,5,0) p.BrickColor="..color.." p.Material="..material.." p.Anchored=true p:SetAttribute('CreadoPorIA',true) p:SetAttribute('CreacionTimestamp',os.time()) p.Parent=workspace"
-        end
-        return { exito = true, codigo = codigo, mensaje = "✅ " .. nombreCmd .. " creado", tipo = "objeto" }
-    end
-
-    if cmdData.tipo == "modificador" then
-        if nombreCmd == "velocidad" then
-            local vel = extraerNumero(texto, 50)
-            return { exito=true, codigo="local c=game.Players.LocalPlayer.Character if c then local h=c:FindFirstChildOfClass('Humanoid') if h then h.WalkSpeed="..vel.." end end", mensaje="🏃 Velocidad: "..vel, tipo="modificador" }
-        elseif nombreCmd == "salto" then
-            local s = extraerNumero(texto, 100)
-            return { exito=true, codigo="local c=game.Players.LocalPlayer.Character if c then local h=c:FindFirstChildOfClass('Humanoid') if h then h.JumpPower="..s.." end end", mensaje="🦘 Salto: "..s, tipo="modificador" }
-        elseif nombreCmd == "volar" then
-            return { exito = true, codigo = "local char=game.Players.LocalPlayer.Character if char then local hrp=char:WaitForChild('HumanoidRootPart') local bg=Instance.new('BodyGyro') bg.MaxTorque=Vector3.new(9e9,9e9,9e9) bg.Parent=hrp local bv=Instance.new('BodyVelocity') bv.MaxForce=Vector3.new(9e9,9e9,9e9) bv.Velocity=Vector3.new(0,0,0) bv.Parent=hrp game:GetService('RunService').Heartbeat:Connect(function() local cam=workspace.CurrentCamera if game:GetService('UserInputService'):IsKeyDown(Enum.KeyCode.Space) then bv.Velocity=cam.CFrame.LookVector*50 else bv.Velocity=Vector3.new(0,0,0) end bg.CFrame=cam.CFrame end) end", mensaje = "✈️ Vuelo activado", tipo="modificador" }
-        end
-    end
-
-    if cmdData.tipo == "mundo" then
-        if nombreCmd == "dia" or contiene(texto, {"noche","atardecer"}) then
-            local hora = contiene(texto,"noche") and "0" or contiene(texto,"atardecer") and "18" or "12"
-            return { exito=true, codigo="game:GetService('Lighting').ClockTime="..hora, mensaje="🌞 Hora cambiada", tipo="mundo" }
-        elseif nombreCmd == "gravedad" then
-            local g = extraerNumero(texto, 196)
-            return { exito=true, codigo="workspace.Gravity="..g, mensaje="🌍 Gravedad: "..g, tipo="mundo" }
-        end
-    end
-
-    if cmdData.tipo == "efecto" and nombreCmd == "explosion" then
-        local p = extraerNumero(texto, 30)
-        return { exito=true, codigo="local e=Instance.new('Explosion') e.Position=Vector3.new(0,5,0) e.BlastPressure="..p.." e.Parent=workspace", mensaje="💥 Boom!", tipo="efecto" }
-    end
-    
-    if cmdData.tipo == "animacion" then
-        local plugin = nil
-        if Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
-            for nombrePlugin, pluginData in pairs(Modulos.Database.Plugins.instalados) do
-                if pluginData.comandos and pluginData.comandos[nombreCmd] then
-                    plugin = pluginData
-                    break
-                end
-            end
-        end
-        
-        if plugin then
-            local codigo = nil
-            if nombreCmd == "rotar" then
-                local velocidad = contiene(texto, "rapido") and "rapido" or "normal"
-                codigo = plugin.generarRotacion(velocidad, "y")
-            elseif nombreCmd == "flotar" then
-                codigo = plugin.generarFlotacion("normal", "normal")
-            elseif nombreCmd == "pulsar" then
-                codigo = plugin.generarPulsacion("normal")
-            elseif nombreCmd == "orbitar" then
-                codigo = plugin.generarOrbitacion("normal", "normal")
-            elseif nombreCmd == "arcoiris" then
-                codigo = plugin.generarArcoiris("normal")
-            end
-            if codigo then
-                local mensajeAnim = "✨ Animación: " .. cmdData.descripcion
-                if Modulos.SmartAI then
-                    mensajeAnim = Modulos.SmartAI:respuestaAnimacion(nombreCmd)
-                end
-                return { exito = true, codigo = codigo, mensaje = mensajeAnim, tipo = "animacion" }
-            end
-        end
-    end
-    
-    if cmdData.tipo == "sistema" then
-        if nombreCmd == "stats" or nombreCmd == "globalstats" or nombreCmd == "trending" or nombreCmd == "sync" then
-            for nombrePlugin, pluginData in pairs(Modulos.Database.Plugins.instalados) do
-                if pluginData.comandos and pluginData.comandos[nombreCmd] and pluginData.comandos[nombreCmd].ejecutar then
-                    local resultado = pluginData.comandos[nombreCmd].ejecutar()
-                    return { exito = true, codigo = nil, mensaje = resultado, tipo = "sistema" }
-                end
-            end
-        end
-    end
-
-    Modulos.Database:actualizarEstadistica("comandosFallidos")
-    return { exito=false, codigo=nil, mensaje="⚠️ Comando reconocido pero no implementado aún", tipo="error" }
+    return { exito=false, codigo=nil, mensaje="Comando reconocido pero no implementado" }
 end
 
 local function ejecutarCodigo(codigo)
@@ -390,9 +244,6 @@ local function ejecutarCodigo(codigo)
     local ok, errE = pcall(fn)
     if ok then
         Modulos.Database:actualizarEstadistica("comandosExitosos")
-        if Modulos.Database.ejecutarHookPlugin then
-            Modulos.Database:ejecutarHookPlugin("onSuccess", estadoIA.ultimoComando)
-        end
         return true,"OK"
     else
         Modulos.Database:actualizarEstadistica("comandosFallidos")
@@ -429,31 +280,40 @@ local function deshacer()
 end
 
 -- ============================================================
--- CONFIGURAR INTERFAZ (DENTRO DEL CALLBACK DEL SPLASH)
+-- INICIALIZAR SISTEMA - SIN SPLASH
 -- ============================================================
 
-local function configurarInterfaz(ventana)
+local function inicializar()
+    if not Modulos.Database or not Modulos.UI then error("Módulos no cargados") end
+    
+    print("[IA Constructor] Creando interfaz DIRECTAMENTE...")
+    
+    -- ✅ CREAR VENTANA DIRECTAMENTE (sin splash)
+    local ventana = Modulos.UI:crearVentana({
+        titulo = "Rozek",
+        subtitulo = "Asistente IA v3.2",
+        ancho = 500,
+        alto = 600
+    })
+    
+    if not ventana then
+        error("No se pudo crear la ventana")
+    end
+    
     local chatArea = ventana.ChatArea
     local inputComponents = ventana.InputBox
     local statusComponents = ventana.StatusBar
     
-    -- Mensaje de bienvenida con streaming
-    local msg = "¡Hola! 👋 Soy Rozek, tu asistente v3.2\n\n"
-    msg = msg .. "Prueba:\n• casa roja\n• torre 15 azul\n• castillo gris\n• rotar rapido\n• ayuda"
+    print("[IA Constructor] ✅ Interfaz creada")
+    
+    -- Mensaje de bienvenida
+    local msg = "¡Hola! 👋 Soy Rozek v3.2\n\nPrueba:\n• casa roja\n• torre 15 azul\n• castillo\n• ayuda"
     
     if pluginsActivos > 0 then
         msg = msg .. "\n\n[" .. pluginsActivos .. " plugins activos]"
     end
     
-    if Modulos.SmartAI then
-        msg = msg .. "\n\n🧠 Respuestas inteligentes: ON"
-    end
-    
-    Modulos.UI:crearMensajeConStreaming(chatArea, {
-        texto = msg,
-        esUsuario = false,
-        velocidad = "normal"
-    })
+    Modulos.UI:crearMensaje(chatArea, {texto = msg, esUsuario = false})
     
     -- Función procesar mensaje
     local function procesarMensaje(texto)
@@ -468,50 +328,23 @@ local function configurarInterfaz(ventana)
         
         inputComponents.InputBox.Text = ""
         
-        task.wait(math.random(50, 100) / 100)
+        task.wait(0.3)
         
         Modulos.UI:ocultarPensando(chatArea)
         
         local res = interpretarComando(texto)
         
-        local mensajeRespuesta = res.mensaje
-        local velocidadStreaming = "normal"
-        
-        if Modulos.SmartAI then
-            local intencion = Modulos.SmartAI:detectarIntencion(texto)
-            
-            if intencion ~= "comando" then
-                mensajeRespuesta = Modulos.SmartAI:obtenerRespuesta(texto, intencion)
-                velocidadStreaming = "lento"
-            end
-            
-            Modulos.SmartAI:aprenderDeUsuario(texto)
-            mensajeRespuesta = Modulos.SmartAI:adaptarRespuesta(mensajeRespuesta)
-        end
-        
         if res.codigo then
             local ok, msg = ejecutarCodigo(res.codigo)
             if ok then
-                Modulos.UI:crearMensajeConStreaming(chatArea, {
-                    texto = mensajeRespuesta,
-                    esExito = true,
-                    velocidad = velocidadStreaming
-                })
+                Modulos.UI:crearMensaje(chatArea, {texto = res.mensaje, esExito = true})
                 Modulos.UI:actualizarEstado(statusComponents, "exito", "OK")
             else
-                Modulos.UI:crearMensajeConStreaming(chatArea, {
-                    texto = "❌ " .. msg,
-                    esError = true,
-                    velocidad = "rapido"
-                })
+                Modulos.UI:crearMensaje(chatArea, {texto = "❌ " .. msg, esError = true})
                 Modulos.UI:actualizarEstado(statusComponents, "error", "Error")
             end
         else
-            Modulos.UI:crearMensajeConStreaming(chatArea, {
-                texto = mensajeRespuesta,
-                esError = not res.exito,
-                velocidad = velocidadStreaming
-            })
+            Modulos.UI:crearMensaje(chatArea, {texto = res.mensaje, esError = not res.exito})
             Modulos.UI:actualizarEstado(statusComponents, res.exito and "listo" or "error", res.exito and "Listo" or "Error")
         end
         
@@ -534,49 +367,14 @@ local function configurarInterfaz(ventana)
             Modulos.UI:mostrarNotificacion({texto = msg, tipo = ok and "exito" or "error", duracion = 2})
         end
     end)
-end
-
--- ============================================================
--- INICIALIZAR SISTEMA - CORREGIDO
--- ============================================================
-
-local function inicializar()
-    if not Modulos.Database or not Modulos.UI then error("Módulos no cargados") end
     
-    print("[IA Constructor] Mostrando splash screen...")
+    -- Notificación final
+    task.wait(0.2)
+    local msg = "✅ Rozek v3.2 listo!"
+    if pluginsActivos > 0 then msg = msg .. " (" .. pluginsActivos .. " plugins)" end
+    Modulos.UI:mostrarNotificacion({texto = msg, tipo = "exito", duracion = 3})
     
-    -- ✅ CORREGIDO: Splash + Callback que crea la ventana
-    Modulos.UI:mostrarSplashScreen(function()
-        print("[IA Constructor] Splash completado, creando interfaz...")
-        
-        task.wait(0.2)
-        
-        -- Crear ventana SIN splash interno (ya se mostró)
-        local ventana = Modulos.UI:crearVentana({
-            titulo = "Rozek",
-            subtitulo = "Asistente IA v3.2",
-            ancho = 500,
-            alto = 600,
-            mostrarSplash = false  -- ⬅️ IMPORTANTE: Ya se mostró arriba
-        })
-        
-        print("[IA Constructor] Ventana creada, configurando...")
-        
-        task.wait(0.3)
-        
-        -- Configurar interfaz
-        configurarInterfaz(ventana)
-        
-        task.wait(0.5)
-        
-        -- Notificación final
-        local msg = "Rozek v3.2 listo!"
-        if pluginsActivos > 0 then msg = msg .. " (" .. pluginsActivos .. " plugins)" end
-        if Modulos.SmartAI then msg = msg .. " 🧠" end
-        
-        Modulos.UI:mostrarNotificacion({texto = msg, tipo = "exito", duracion = 3})
-        print("[IA Constructor] ✅ Sistema completamente inicializado")
-    end)
+    print("[IA Constructor] ✅ Sistema completamente inicializado")
 end
 
 -- ============================================================
