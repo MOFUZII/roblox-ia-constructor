@@ -386,7 +386,7 @@ function UI:_crearStatusBar(parent)
     StatusText.Size = UDim2.new(1, -40, 1, 0)
     StatusText.Position = UDim2.new(0, 32, 0, 0)
     StatusText.BackgroundTransparency = 1
-    StatusText.Text = "🟢 Sistema listo"
+    StatusText.Text = " Sistema listo"
     StatusText.TextColor3 = self.Colores.texto
     StatusText.TextSize = 13
     StatusText.Font = self.Estilos.fuentePrincipal
@@ -422,7 +422,7 @@ function UI:_crearInput(parent)
     InputBox.Position = UDim2.new(0, 14, 0, 0)
     InputBox.BackgroundTransparency = 1
     InputBox.TextColor3 = self.Colores.texto
-    InputBox.PlaceholderText = "💬 Escribe tu comando aquí..."
+    InputBox.PlaceholderText = " Escribe tu comando aquí..."
     InputBox.PlaceholderColor3 = self.Colores.textoTerciario
     InputBox.Text = ""
     InputBox.TextSize = self.Estilos.tamañoTexto
@@ -650,16 +650,16 @@ function UI:mostrarNotificacion(config)
     local icono
     if cfg.tipo == "exito" then 
         color = self.Colores.exito
-        icono = "✅"
+        icono = ""
     elseif cfg.tipo == "error" then 
         color = self.Colores.error
-        icono = "❌"
+        icono = ""
     elseif cfg.tipo == "advertencia" then 
         color = self.Colores.advertencia
-        icono = "⚠️"
+        icono = ""
     else 
         color = self.Colores.info
-        icono = "ℹ️"
+        icono = ""
     end
     
     local ScreenGui = game:GetService("CoreGui"):FindFirstChild("RobloxAIConstructor") or Instance.new("ScreenGui", game:GetService("CoreGui"))
@@ -747,14 +747,14 @@ function UI:actualizarEstado(statusComponents, estado, mensaje)
     }
     
     local iconos = {
-        listo = "🟢",
-        pensando = "🟡",
-        error = "🔴",
-        exito = "🟢"
+        listo = "",
+        pensando = "",
+        error = "",
+        exito = ""
     }
     
     local color = colores[estado] or self.Colores.info
-    local icono = iconos[estado] or "⚪"
+    local icono = iconos[estado] or ""
     
     -- Actualizar color con transición
     TweenService:Create(statusComponents.StatusDot, TweenInfo.new(0.3), {
