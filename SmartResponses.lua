@@ -1,13 +1,7 @@
 -- ============================================================
 -- SMART_RESPONSES.LUA - Motor de IA Simulada
 -- Sistema de respuestas inteligentes SIN necesidad de API externa
--- ============================================================
--- CARACTERÍSTICAS:
--- ✅ Procesamiento de lenguaje natural básico
--- ✅ Respuestas contextuales dinámicas
--- ✅ Aprendizaje del estilo del usuario
--- ✅ Sistema de plantillas inteligentes
--- ✅ Detección de intención
+-- Versión 1.0.1 - CORRECCIÓN: Manejo seguro de nil
 -- ============================================================
 
 local SmartResponses = {}
@@ -146,7 +140,8 @@ SmartResponses.Plantillas = {
 -- ============================================================
 
 function SmartResponses:detectarIntencion(texto)
-    texto = texto:lower()
+    if not texto then return "comando" end
+    texto = tostring(texto):lower()
     
     -- Saludos
     for _, palabra in ipairs(self.Plantillas.saludos.entrada) do
@@ -183,7 +178,7 @@ function SmartResponses:detectarIntencion(texto)
         end
     end
     
-    return "comando" -- Por defecto es un comando
+    return "comando"
 end
 
 -- ============================================================
@@ -201,29 +196,35 @@ function SmartResponses:generar(intencion, contexto)
     -- Seleccionar respuesta aleatoria
     local respuesta = plantillas.respuestas[math.random(#plantillas.respuestas)]
     
-    -- Reemplazar variables
+    -- ⚠️ CORRECCIÓN: Manejo seguro de variables que pueden ser nil
     if contexto.emoji then
-        respuesta = respuesta:gsub("{emoji}", contexto.emoji)
+        respuesta = respuesta:gsub("{emoji}", tostring(contexto.emoji))
     end
-    if contexto.color then
-        respuesta = respuesta:gsub("{color_msg}", contexto.color)
+    
+    if contexto.color and contexto.color ~= "" then
+        respuesta = respuesta:gsub("{color_msg}", tostring(contexto.color))
     else
         respuesta = respuesta:gsub("{color_msg}", "")
     end
+    
     if contexto.count then
         respuesta = respuesta:gsub("{count}", tostring(contexto.count))
     end
+    
     if contexto.tipo then
-        respuesta = respuesta:gsub("{tipo}", contexto.tipo)
+        respuesta = respuesta:gsub("{tipo}", tostring(contexto.tipo))
     end
+    
     if contexto.sugerencia then
-        respuesta = respuesta:gsub("{sugerencia}", contexto.sugerencia)
+        respuesta = respuesta:gsub("{sugerencia}", tostring(contexto.sugerencia))
     end
+    
     if contexto.ejemplo then
-        respuesta = respuesta:gsub("{ejemplo}", contexto.ejemplo)
+        respuesta = respuesta:gsub("{ejemplo}", tostring(contexto.ejemplo))
     end
+    
     if contexto.comando then
-        respuesta = respuesta:gsub("{comando}", contexto.comando)
+        respuesta = respuesta:gsub("{comando}", tostring(contexto.comando))
     end
     
     return respuesta
@@ -234,6 +235,8 @@ end
 -- ============================================================
 
 function SmartResponses:respuestaConstruccion(nombreCmd, parametros, estadisticas)
+    -- ⚠️ CORRECCIÓN: Validar que los parámetros existan
+    nombreCmd = nombreCmd or "construccion"
     parametros = parametros or {}
     estadisticas = estadisticas or {}
     
@@ -252,12 +255,18 @@ function SmartResponses:respuestaConstruccion(nombreCmd, parametros, estadistica
     
     local respuesta = self:generar("construccion_exitosa", contexto)
     
+    -- ⚠️ CORRECCIÓN: Verificar que respuesta no sea nil
+    if not respuesta then
+        return "🏗️ ¡Construcción completada!"
+    end
+    
     -- Agregar mensaje contextual si es relevante
     if estadisticas.construccionesCreadas == 1 then
         respuesta = respuesta .. "\n" .. self.Plantillas.contexto.primera_construccion[1]
     elseif estadisticas.construccionesCreadas and estadisticas.construccionesCreadas % 10 == 0 then
-        local ctx = {count = estadisticas.construccionesCreadas}
-        respuesta = respuesta .. "\n" .. self:generar("contexto", ctx)
+        local msg = self.Plantillas.contexto.muchas_construcciones[1]
+        msg = msg:gsub("{count}", tostring(estadisticas.construccionesCreadas))
+        respuesta = respuesta .. "\n" .. msg
     end
     
     return respuesta
@@ -268,6 +277,7 @@ end
 -- ============================================================
 
 function SmartResponses:respuestaAnimacion(nombreCmd)
+    nombreCmd = nombreCmd or "animacion"
     return self.Plantillas.animaciones[nombreCmd] or "✨ Animación activada"
 end
 
@@ -285,15 +295,15 @@ function SmartResponses:respuestaError(tipoError, contexto)
     
     local respuesta = plantillas[math.random(#plantillas)]
     
-    -- Reemplazar variables
+    -- ⚠️ CORRECCIÓN: Manejo seguro de variables
     if contexto.sugerencia then
-        respuesta = respuesta:gsub("{sugerencia}", contexto.sugerencia)
+        respuesta = respuesta:gsub("{sugerencia}", tostring(contexto.sugerencia))
     end
     if contexto.ejemplo then
-        respuesta = respuesta:gsub("{ejemplo}", contexto.ejemplo)
+        respuesta = respuesta:gsub("{ejemplo}", tostring(contexto.ejemplo))
     end
     if contexto.comando then
-        respuesta = respuesta:gsub("{comando}", contexto.comando)
+        respuesta = respuesta:gsub("{comando}", tostring(contexto.comando))
     end
     
     return respuesta
@@ -304,6 +314,8 @@ end
 -- ============================================================
 
 function SmartResponses:obtenerRespuesta(texto, tipoAccion, metadata)
+    -- ⚠️ CORRECCIÓN: Validar entrada
+    texto = texto or ""
     metadata = metadata or {}
     
     -- Detectar intención
@@ -311,7 +323,7 @@ function SmartResponses:obtenerRespuesta(texto, tipoAccion, metadata)
     
     -- Si es un saludo, despedida, etc
     if intencion ~= "comando" then
-        return self:generar(intencion, metadata)
+        return self:generar(intencion, metadata) or "✅ Entendido"
     end
     
     -- Si es una construcción
@@ -348,8 +360,12 @@ SmartResponses.Aprendizaje = {
 }
 
 function SmartResponses:aprenderDeUsuario(texto)
-    -- Detectar uso de emojis
-    if texto:match("[\u{1F300}-\u{1F9FF}]") then
+    -- ⚠️ CORRECCIÓN: Validar entrada
+    if not texto then return end
+    texto = tostring(texto)
+    
+    -- Detectar uso de emojis (simplificado para evitar errores de regex)
+    if texto:match("[😀-🙏]") or texto:match("[🌀-🗿]") then
         self.Aprendizaje.patronesDetectados.usaEmojis = true
     end
     
@@ -365,9 +381,14 @@ function SmartResponses:aprenderDeUsuario(texto)
 end
 
 function SmartResponses:adaptarRespuesta(respuesta)
-    -- Si el usuario no usa emojis, removerlos
+    -- ⚠️ CORRECCIÓN: Validar que respuesta no sea nil
+    if not respuesta then return "✅ Listo" end
+    respuesta = tostring(respuesta)
+    
+    -- Si el usuario no usa emojis, removerlos (simplificado)
     if not self.Aprendizaje.patronesDetectados.usaEmojis then
-        respuesta = respuesta:gsub("[\u{1F300}-\u{1F9FF}]", ""):gsub("%s+", " "):match("^%s*(.-)%s*$")
+        respuesta = respuesta:gsub("[😀-🙏]", ""):gsub("[🌀-🗿]", "")
+        respuesta = respuesta:gsub("%s+", " "):match("^%s*(.-)%s*$") or respuesta
     end
     
     -- Si el usuario es formal, agregar cortesía
@@ -379,7 +400,6 @@ function SmartResponses:adaptarRespuesta(respuesta)
     
     -- Si prefiere brevedad, acortar
     if self.Aprendizaje.patronesDetectados.prefiereBrevedad then
-        -- Remover explicaciones extra
         local lineas = {}
         for linea in respuesta:gmatch("[^\n]+") do
             table.insert(lineas, linea)
