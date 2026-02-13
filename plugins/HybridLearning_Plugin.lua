@@ -143,12 +143,14 @@ local function guardarEnJSONBin()
     
     local data = encodearData(GlobalData)
     
+    local headers = {
+        ["Content-Type"] = "application/json",
+        ["X-Master-Key"] = CONFIG.JSONBIN_API_KEY,
+        ["X-Bin-Versioning"] = "false"
+    }
+    
     local success, response = pcall(function()
-        return game:HttpPostAsync(url, data, Enum.HttpContentType.ApplicationJson, false, {
-            ["Content-Type"] = "application/json",
-            ["X-Master-Key"] = CONFIG.JSONBIN_API_KEY,
-            ["X-Bin-Versioning"] = "false"
-        })
+        return game:HttpPost(url, data, Enum.HttpContentType.ApplicationJson, false, headers)
     end)
     
     if success then
@@ -167,16 +169,16 @@ local function cargarDeJSONBin()
     local url = "https://api.jsonbin.io/v3/b/" .. CONFIG.JSONBIN_BIN_ID .. "/latest"
     
     local success, response = pcall(function()
-        return game:HttpGetAsync(url, false, {
+        return game:HttpGet(url .. "?meta=false", {
             ["X-Master-Key"] = CONFIG.JSONBIN_API_KEY
         })
     end)
     
     if success then
         local decoded = decodearData(response)
-        if decoded and decoded.record then
+        if decoded then
             -- Mergear datos descargados con estructura local
-            for key, value in pairs(decoded.record) do
+            for key, value in pairs(decoded) do
                 if GlobalData[key] ~= nil then
                     GlobalData[key] = value
                 end
