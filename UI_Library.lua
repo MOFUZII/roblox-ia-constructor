@@ -1,6 +1,6 @@
 -- ============================================================
--- UI_LIBRARY.LUA v3.2.4 - SIN SPLASH SCREEN
--- SOLUCIÓN: Ventana directa, sin animación de carga
+-- UI_LIBRARY.LUA v3.2.5 - CORRECCIÓN FINAL
+-- SOLUCIÓN: Eliminado SetAttribute que guardaba TweenInfo (Instance)
 -- ============================================================
 
 local UI = {}
@@ -10,6 +10,9 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
+
+-- ⚠️ NUEVO: Almacenar tweens activos SIN usar atributos
+local tweensActivos = {}
 
 UI.Colores = {
     fondo = Color3.fromRGB(25, 25, 28),
@@ -670,6 +673,7 @@ function UI:mostrarNotificacion(config)
     end)
 end
 
+-- ⚠️ CORRECCIÓN CRÍTICA: No usar SetAttribute para guardar TweenInfo
 function UI:actualizarEstado(statusComponents, estado, mensaje)
     local colores = {
         listo = self.Colores.exito,
@@ -687,17 +691,22 @@ function UI:actualizarEstado(statusComponents, estado, mensaje)
     statusComponents.StatusText.Text = mensaje or estado
     
     if estado == "pensando" then
+        -- ✅ CORRECCIÓN: Guardar tween en tabla global en lugar de atributo
         local pulso = TweenService:Create(
             statusComponents.StatusDot,
             TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true),
             {BackgroundTransparency = 0.3}
         )
         pulso:Play()
-        statusComponents.StatusDot:SetAttribute("Pulso", pulso)
+        
+        -- Guardar en tabla en lugar de SetAttribute
+        tweensActivos[statusComponents.StatusDot] = pulso
     else
-        local pulso = statusComponents.StatusDot:GetAttribute("Pulso")
+        -- Recuperar de tabla en lugar de GetAttribute
+        local pulso = tweensActivos[statusComponents.StatusDot]
         if pulso then
             pulso:Cancel()
+            tweensActivos[statusComponents.StatusDot] = nil
         end
         statusComponents.StatusDot.BackgroundTransparency = 0
     end
