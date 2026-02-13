@@ -1,6 +1,6 @@
 -- ============================================================
--- UI_LIBRARY.LUA v3.2.3 - FIX SPLASH SCREEN
--- Corregido: Error en animación del Logo
+-- UI_LIBRARY.LUA v3.2.4 - SIN SPLASH SCREEN
+-- SOLUCIÓN: Ventana directa, sin animación de carga
 -- ============================================================
 
 local UI = {}
@@ -91,190 +91,7 @@ function UI:obtenerContexto()
 end
 
 -- ============================================================
--- SPLASH SCREEN - CORREGIDO
--- ============================================================
-
-function UI:mostrarSplashScreen(callback)
-    print("[UI_Library] Iniciando splash screen...")
-    
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "RozekSplash"
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.DisplayOrder = 1000
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.Parent = game:GetService("CoreGui")
-    
-    local Fondo = Instance.new("Frame")
-    Fondo.Size = UDim2.new(0, 500, 0, 600)
-    Fondo.Position = UDim2.new(0.5, -250, 0.5, -300)
-    Fondo.BackgroundColor3 = self.Colores.fondo
-    Fondo.BorderSizePixel = 0
-    Fondo.Parent = ScreenGui
-    
-    local FondoCorner = Instance.new("UICorner")
-    FondoCorner.CornerRadius = UDim.new(0, self.Estilos.redondeo)
-    FondoCorner.Parent = Fondo
-    
-    local FondoStroke = Instance.new("UIStroke")
-    FondoStroke.Color = self.Colores.borde
-    FondoStroke.Thickness = 1
-    FondoStroke.Transparency = 0.5
-    FondoStroke.Parent = Fondo
-    
-    local LogoContainer = Instance.new("Frame")
-    LogoContainer.Size = UDim2.new(0, 200, 0, 200)
-    LogoContainer.Position = UDim2.new(0.5, -100, 0.4, -100)
-    LogoContainer.BackgroundTransparency = 1
-    LogoContainer.Parent = Fondo
-    
-    -- ✅ FIX: Logo como Frame con fondo de color
-    local Logo = Instance.new("Frame")
-    Logo.Size = UDim2.new(0, 100, 0, 100)
-    Logo.Position = UDim2.new(0.5, -50, 0, 0)
-    Logo.BackgroundColor3 = self.Colores.acento
-    Logo.BorderSizePixel = 0
-    Logo.BackgroundTransparency = 1  -- Empieza invisible
-    Logo.Parent = LogoContainer
-    
-    local LogoCorner = Instance.new("UICorner")
-    LogoCorner.CornerRadius = UDim.new(0, 20)
-    LogoCorner.Parent = Logo
-    
-    -- ✅ FIX: Letra "R" separada como TextLabel
-    local LogoTexto = Instance.new("TextLabel")
-    LogoTexto.Size = UDim2.new(1, 0, 1, 0)
-    LogoTexto.BackgroundTransparency = 1
-    LogoTexto.Text = "R"
-    LogoTexto.TextColor3 = Color3.fromRGB(255, 255, 255)
-    LogoTexto.TextSize = 60
-    LogoTexto.Font = self.Estilos.fuenteTitulo
-    LogoTexto.TextTransparency = 1  -- Empieza invisible
-    LogoTexto.Parent = Logo
-    
-    local Titulo = Instance.new("TextLabel")
-    Titulo.Size = UDim2.new(0, 200, 0, 40)
-    Titulo.Position = UDim2.new(0, 0, 0, 110)
-    Titulo.BackgroundTransparency = 1
-    Titulo.Text = "Rozek"
-    Titulo.TextColor3 = self.Colores.textoPrincipal
-    Titulo.TextSize = 32
-    Titulo.Font = self.Estilos.fuenteTitulo
-    Titulo.TextTransparency = 1
-    Titulo.Parent = LogoContainer
-    
-    local Subtitulo = Instance.new("TextLabel")
-    Subtitulo.Size = UDim2.new(0, 200, 0, 20)
-    Subtitulo.Position = UDim2.new(0, 0, 0, 150)
-    Subtitulo.BackgroundTransparency = 1
-    Subtitulo.Text = "Asistente IA v3.2"
-    Subtitulo.TextColor3 = self.Colores.textoSecundario
-    Subtitulo.TextSize = 14
-    Subtitulo.Font = self.Estilos.fuentePrincipal
-    Subtitulo.TextTransparency = 1
-    Subtitulo.Parent = LogoContainer
-    
-    local BarraContainer = Instance.new("Frame")
-    BarraContainer.Size = UDim2.new(0, 300, 0, 4)
-    BarraContainer.Position = UDim2.new(0.5, -150, 0.7, 0)
-    BarraContainer.BackgroundColor3 = self.Colores.bordeOscuro
-    BarraContainer.BorderSizePixel = 0
-    BarraContainer.BackgroundTransparency = 1
-    BarraContainer.Parent = Fondo
-    
-    local BarraCorner = Instance.new("UICorner")
-    BarraCorner.CornerRadius = UDim.new(1, 0)
-    BarraCorner.Parent = BarraContainer
-    
-    local Barra = Instance.new("Frame")
-    Barra.Size = UDim2.new(0, 0, 1, 0)
-    Barra.BackgroundColor3 = self.Colores.acento
-    Barra.BorderSizePixel = 0
-    Barra.Parent = BarraContainer
-    
-    local BarraProgCorner = Instance.new("UICorner")
-    BarraProgCorner.CornerRadius = UDim.new(1, 0)
-    BarraProgCorner.Parent = Barra
-    
-    local Gradiente = Instance.new("UIGradient")
-    Gradiente.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, self.Colores.acento),
-        ColorSequenceKeypoint.new(1, self.Colores.acentoGradiente)
-    }
-    Gradiente.Parent = Barra
-    
-    local Estado = Instance.new("TextLabel")
-    Estado.Size = UDim2.new(0, 300, 0, 20)
-    Estado.Position = UDim2.new(0.5, -150, 0.75, 0)
-    Estado.BackgroundTransparency = 1
-    Estado.Text = "Iniciando sistema..."
-    Estado.TextColor3 = self.Colores.textoTerciario
-    Estado.TextSize = 12
-    Estado.Font = self.Estilos.fuentePrincipal
-    Estado.TextTransparency = 1
-    Estado.Parent = Fondo
-    
-    task.spawn(function()
-        print("[UI_Library] Animando splash...")
-        
-        -- ✅ FIX: Animar Frame y TextLabel por separado
-        TweenService:Create(Logo, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            BackgroundTransparency = 0
-        }):Play()
-        
-        TweenService:Create(LogoTexto, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            TextTransparency = 0
-        }):Play()
-        
-        TweenService:Create(Titulo, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            TextTransparency = 0
-        }):Play()
-        
-        TweenService:Create(Subtitulo, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            TextTransparency = 0
-        }):Play()
-        
-        task.wait(0.4)
-        
-        TweenService:Create(BarraContainer, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
-        TweenService:Create(Estado, TweenInfo.new(0.2), {TextTransparency = 0}):Play()
-        
-        task.wait(0.2)
-        
-        TweenService:Create(Barra, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
-            Size = UDim2.new(1, 0, 1, 0)
-        }):Play()
-        
-        task.wait(0.9)
-        
-        Estado.Text = "¡Listo!"
-        task.wait(0.2)
-        
-        print("[UI_Library] Splash completado, ejecutando callback...")
-        
-        -- Fade out
-        for _, obj in ipairs({Logo, LogoTexto, Titulo, Subtitulo, BarraContainer, Estado}) do
-            TweenService:Create(obj, TweenInfo.new(0.2), {
-                BackgroundTransparency = 1,
-                TextTransparency = 1
-            }):Play()
-        end
-        
-        TweenService:Create(FondoStroke, TweenInfo.new(0.2), {Transparency = 1}):Play()
-        TweenService:Create(Fondo, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
-        
-        task.wait(0.3)
-        ScreenGui:Destroy()
-        print("[UI_Library] Splash destruido")
-        
-        if callback then 
-            print("[UI_Library] Ejecutando callback...")
-            pcall(callback)
-        end
-    end)
-end
-
--- ============================================================
--- CREAR VENTANA
+-- CREAR VENTANA (SIN SPLASH)
 -- ============================================================
 
 function UI:crearVentana(config)
@@ -286,81 +103,63 @@ function UI:crearVentana(config)
         ancho = config.ancho or 500,
         alto = config.alto or 600,
         draggable = config.draggable ~= false,
-        mostrarSplash = config.mostrarSplash ~= false,
     }
     
-    local function crearInterfaz()
-        print("[UI_Library] Creando interfaz...")
-        
-        pcall(function()
-            local vieja = game:GetService("CoreGui"):FindFirstChild("RobloxAIConstructor")
-            if vieja then vieja:Destroy() end
-        end)
-        
-        local ScreenGui = Instance.new("ScreenGui")
-        ScreenGui.Name = "RobloxAIConstructor"
-        ScreenGui.ResetOnSpawn = false
-        ScreenGui.DisplayOrder = 999
-        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        ScreenGui.Parent = game:GetService("CoreGui")
-        
-        local Main = Instance.new("Frame")
-        Main.Name = "Main"
-        Main.Size = UDim2.new(0, cfg.ancho, 0, 0)
-        Main.Position = UDim2.new(0.5, -cfg.ancho/2, 0.5, -cfg.alto/2)
-        Main.AnchorPoint = Vector2.new(0, 0)
-        Main.BackgroundColor3 = self.Colores.fondo
-        Main.BorderSizePixel = 0
-        Main.Active = true
-        Main.Parent = ScreenGui
-        
-        if cfg.draggable then
-            Main.Draggable = true
-        end
-        
-        local MainCorner = Instance.new("UICorner")
-        MainCorner.CornerRadius = UDim.new(0, self.Estilos.redondeo)
-        MainCorner.Parent = Main
-        
-        local MainStroke = Instance.new("UIStroke")
-        MainStroke.Color = self.Colores.borde
-        MainStroke.Thickness = 1
-        MainStroke.Transparency = 0.5
-        MainStroke.Parent = Main
-        
-        local componentes = {
-            ScreenGui = ScreenGui,
-            Main = Main,
-            Header = nil,
-            ChatArea = nil,
-            InputBox = nil,
-            StatusBar = nil,
-        }
-        
-        componentes.Header = self:_crearHeader(Main, cfg)
-        componentes.ChatArea = self:_crearChatArea(Main)
-        componentes.StatusBar = self:_crearStatusBar(Main)
-        componentes.InputBox = self:_crearInput(Main)
-        
-        Main.BackgroundTransparency = 1
-        TweenService:Create(Main, TweenInfo.new(self.Estilos.duracionLenta, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            Size = UDim2.new(0, cfg.ancho, 0, cfg.alto),
-            BackgroundTransparency = 0
-        }):Play()
-        
-        print("[UI_Library] Interfaz creada exitosamente")
-        
-        return componentes
+    print("[UI_Library] Creando interfaz directamente...")
+    
+    pcall(function()
+        local vieja = game:GetService("CoreGui"):FindFirstChild("RobloxAIConstructor")
+        if vieja then vieja:Destroy() end
+    end)
+    
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "RobloxAIConstructor"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.DisplayOrder = 999
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Parent = game:GetService("CoreGui")
+    
+    local Main = Instance.new("Frame")
+    Main.Name = "Main"
+    Main.Size = UDim2.new(0, cfg.ancho, 0, cfg.alto)
+    Main.Position = UDim2.new(0.5, -cfg.ancho/2, 0.5, -cfg.alto/2)
+    Main.AnchorPoint = Vector2.new(0, 0)
+    Main.BackgroundColor3 = self.Colores.fondo
+    Main.BorderSizePixel = 0
+    Main.Active = true
+    Main.Parent = ScreenGui
+    
+    if cfg.draggable then
+        Main.Draggable = true
     end
     
-    if cfg.mostrarSplash then
-        self:mostrarSplashScreen(function()
-            crearInterfaz()
-        end)
-        return nil
-    else
-        return crearInterfaz()
-    end
+    local MainCorner = Instance.new("UICorner")
+    MainCorner.CornerRadius = UDim.new(0, self.Estilos.redondeo)
+    MainCorner.Parent = Main
+    
+    local MainStroke = Instance.new("UIStroke")
+    MainStroke.Color = self.Colores.borde
+    MainStroke.Thickness = 1
+    MainStroke.Transparency = 0.5
+    MainStroke.Parent = Main
+    
+    local componentes = {
+        ScreenGui = ScreenGui,
+        Main = Main,
+        Header = nil,
+        ChatArea = nil,
+        InputBox = nil,
+        StatusBar = nil,
+    }
+    
+    componentes.Header = self:_crearHeader(Main, cfg)
+    componentes.ChatArea = self:_crearChatArea(Main)
+    componentes.StatusBar = self:_crearStatusBar(Main)
+    componentes.InputBox = self:_crearInput(Main)
+    
+    print("[UI_Library] ✅ Interfaz creada exitosamente")
+    
+    return componentes
 end
 
 function UI:_crearHeader(parent, config)
