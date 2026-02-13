@@ -1,12 +1,11 @@
 -- ============================================================
--- CORE_IA.LUA - Cerebro Principal v2.0
+-- CORE_IA.LUA - Cerebro Principal v2.1
 -- Sistema Principal - Carga módulos y maneja comandos
 -- ============================================================
 
-print("[IA Constructor] Iniciando sistema v2.0...")
+print("[IA Constructor] Iniciando sistema v2.1...")
 
 local URLS = {
-    -- URLs que COINCIDEN con los nombres de archivos en tu GitHub
     Database   = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/Database_Mejorado.lua",
     UI_Library = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/UI_Library.lua",
     Plugins = {
@@ -22,14 +21,19 @@ local function cargarModulo(nombre, url)
     print("[IA Constructor] Cargando: " .. nombre)
     local ok, resultado = pcall(function()
         local codigo = game:HttpGet(url)
+        if not codigo or codigo == "" then
+            error("Contenido vacío")
+        end
         local fn = loadstring(codigo)
         if fn then return fn() end
+        error("loadstring falló")
     end)
     if ok and resultado then
         print("[IA Constructor] ✅ OK: " .. nombre)
         return resultado
     else
-        warn("[IA Constructor] ❌ ERROR: " .. nombre .. " - " .. tostring(resultado))
+        warn("[IA Constructor] ❌ ERROR: " .. nombre)
+        warn("[IA Constructor] Razón: " .. tostring(resultado))
         return nil
     end
 end
@@ -57,7 +61,11 @@ local function cargarPlugins()
     for nombre, url in pairs(URLS.Plugins) do
         print("[IA Constructor] Intentando cargar plugin: " .. nombre)
         local success, plugin = pcall(function()
-            return loadstring(game:HttpGet(url))()
+            local codigo = game:HttpGet(url)
+            if not codigo or codigo == "" then
+                error("Archivo vacío o no existe")
+            end
+            return loadstring(codigo)()
         end)
         
         if success and plugin then
@@ -72,10 +80,12 @@ local function cargarPlugins()
                 end
             else
                 warn("[IA Constructor] ❌ Plugin '" .. nombre .. "' tiene estructura inválida")
+                warn("[IA Constructor] Estructura: info=" .. tostring(plugin.info) .. ", comandos=" .. tostring(plugin.comandos))
                 pluginsFallidos = pluginsFallidos + 1
             end
         else
-            warn("[IA Constructor] ❌ Error al cargar plugin '" .. nombre .. "': " .. tostring(plugin))
+            warn("[IA Constructor] ❌ Error al cargar plugin '" .. nombre .. "'")
+            warn("[IA Constructor] Razón: " .. tostring(plugin))
             pluginsFallidos = pluginsFallidos + 1
         end
     end
@@ -189,15 +199,19 @@ local function interpretarComando(texto)
         return {
             exito = true,
             codigo = "for _, obj in ipairs(workspace:GetDescendants()) do if obj:IsA('BasePart') and obj:GetAttribute('CreadoPorIA') then obj:Destroy() end end",
-            mensaje = "Construcciones eliminadas"
+            mensaje = "🧹 Construcciones eliminadas"
         }
     end
 
     if nombreCmd == "plugin" then
         if palabras[2] == "listar" or palabras[2] == "list" then
-            local msg = "PLUGINS INSTALADOS:\n"
-            for nombre, plugin in pairs(Modulos.Database.Plugins.instalados) do
-                msg = msg .. "• " .. nombre .. " v" .. plugin.info.version .. "\n"
+            local msg = "📦 PLUGINS INSTALADOS:\n"
+            if Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
+                for nombre, plugin in pairs(Modulos.Database.Plugins.instalados) do
+                    msg = msg .. "✅ " .. nombre .. " v" .. plugin.info.version .. "\n"
+                end
+            else
+                msg = msg .. "No hay plugins instalados"
             end
             return { exito = true, codigo = nil, mensaje = msg }
         end
@@ -215,15 +229,14 @@ local function interpretarComando(texto)
     if cmdData.tipo == "construccion" then
         local construccion = Modulos.Database.Construcciones[nombreCmd]
         if not construccion then
-            return { exito = false, codigo = nil, mensaje = "Construcción '" .. nombreCmd .. "' no implementada" }
+            return { exito = false, codigo = nil, mensaje = "⚠️ Construcción '" .. nombreCmd .. "' no implementada aún" }
         end
         local parametros = {}
         for i = 2, #palabras do
             table.insert(parametros, palabras[i])
         end
         
-        -- Intentar obtener respuesta personalizada del plugin PersonalityAI
-        local mensajeRespuesta = "Construyendo: " .. cmdData.descripcion
+        local mensajeRespuesta = "🏗️ Construyendo: " .. cmdData.descripcion
         if Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
             local personalityPlugin = Modulos.Database.Plugins.instalados["PersonalityAI"]
             if personalityPlugin and personalityPlugin.generarRespuesta then
@@ -258,35 +271,39 @@ local function interpretarComando(texto)
             codigo = "local p=Instance.new('Part') p.Shape=Enum.PartType.Ball p.Size=Vector3.new("..tamano..","..tamano..","..tamano..") p.Position=Vector3.new(0,5,0) p.BrickColor="..color.." p.Material="..material.." p.Anchored=true p:SetAttribute('CreadoPorIA',true) p:SetAttribute('CreacionTimestamp',os.time()) p.Parent=workspace"
         elseif tipo == "cilindro" then
             codigo = "local p=Instance.new('Part') p.Shape=Enum.PartType.Cylinder p.Size=Vector3.new("..tamano..","..tamano..","..tamano..") p.Position=Vector3.new(0,5,0) p.BrickColor="..color.." p.Material="..material.." p.Anchored=true p:SetAttribute('CreadoPorIA',true) p:SetAttribute('CreacionTimestamp',os.time()) p.Parent=workspace"
+        elseif tipo == "cono" then
+            codigo = "local p=Instance.new('Part') p.Size=Vector3.new("..tamano..","..tamano..","..tamano..") p.Position=Vector3.new(0,5,0) p.BrickColor="..color.." p.Material="..material.." p.Anchored=true local m=Instance.new('SpecialMesh') m.MeshType=Enum.MeshType.FileMesh m.MeshId='rbxassetid://1033714' m.Scale=Vector3.new("..tamano..","..tamano..","..tamano..") m.Parent=p p:SetAttribute('CreadoPorIA',true) p:SetAttribute('CreacionTimestamp',os.time()) p.Parent=workspace"
+        elseif tipo == "cubo" then
+            codigo = "local p=Instance.new('Part') p.Size=Vector3.new("..tamano..","..tamano..","..tamano..") p.Position=Vector3.new(0,5,0) p.BrickColor="..color.." p.Material="..material.." p.Anchored=true p:SetAttribute('CreadoPorIA',true) p:SetAttribute('CreacionTimestamp',os.time()) p.Parent=workspace"
         end
-        return { exito = true, codigo = codigo, mensaje = "OK: " .. nombreCmd .. " " .. color }
+        return { exito = true, codigo = codigo, mensaje = "✅ " .. nombreCmd .. " creado" }
     end
 
     if cmdData.tipo == "modificador" then
         if nombreCmd == "velocidad" then
             local vel = extraerNumero(texto, 50)
-            return { exito=true, codigo="local c=game.Players.LocalPlayer.Character if c then local h=c:FindFirstChildOfClass('Humanoid') if h then h.WalkSpeed="..vel.." end end", mensaje="Velocidad: "..vel }
+            return { exito=true, codigo="local c=game.Players.LocalPlayer.Character if c then local h=c:FindFirstChildOfClass('Humanoid') if h then h.WalkSpeed="..vel.." end end", mensaje="🏃 Velocidad: "..vel }
         elseif nombreCmd == "salto" then
             local s = extraerNumero(texto, 100)
-            return { exito=true, codigo="local c=game.Players.LocalPlayer.Character if c then local h=c:FindFirstChildOfClass('Humanoid') if h then h.JumpPower="..s.." end end", mensaje="Salto: "..s }
+            return { exito=true, codigo="local c=game.Players.LocalPlayer.Character if c then local h=c:FindFirstChildOfClass('Humanoid') if h then h.JumpPower="..s.." end end", mensaje="🦘 Salto: "..s }
         elseif nombreCmd == "volar" then
-            return { exito = true, codigo = "local char=game.Players.LocalPlayer.Character if char then local hrp=char:WaitForChild('HumanoidRootPart') local bg=Instance.new('BodyGyro') bg.MaxTorque=Vector3.new(9e9,9e9,9e9) bg.Parent=hrp local bv=Instance.new('BodyVelocity') bv.MaxForce=Vector3.new(9e9,9e9,9e9) bv.Velocity=Vector3.new(0,0,0) bv.Parent=hrp game:GetService('RunService').Heartbeat:Connect(function() local cam=workspace.CurrentCamera if game:GetService('UserInputService'):IsKeyDown(Enum.KeyCode.Space) then bv.Velocity=cam.CFrame.LookVector*50 else bv.Velocity=Vector3.new(0,0,0) end bg.CFrame=cam.CFrame end) end", mensaje = "Vuelo ON" }
+            return { exito = true, codigo = "local char=game.Players.LocalPlayer.Character if char then local hrp=char:WaitForChild('HumanoidRootPart') local bg=Instance.new('BodyGyro') bg.MaxTorque=Vector3.new(9e9,9e9,9e9) bg.Parent=hrp local bv=Instance.new('BodyVelocity') bv.MaxForce=Vector3.new(9e9,9e9,9e9) bv.Velocity=Vector3.new(0,0,0) bv.Parent=hrp game:GetService('RunService').Heartbeat:Connect(function() local cam=workspace.CurrentCamera if game:GetService('UserInputService'):IsKeyDown(Enum.KeyCode.Space) then bv.Velocity=cam.CFrame.LookVector*50 else bv.Velocity=Vector3.new(0,0,0) end bg.CFrame=cam.CFrame end) end", mensaje = "✈️ Vuelo activado" }
         end
     end
 
     if cmdData.tipo == "mundo" then
         if nombreCmd == "dia" or contiene(texto, {"noche","atardecer"}) then
             local hora = contiene(texto,"noche") and "0" or contiene(texto,"atardecer") and "18" or "12"
-            return { exito=true, codigo="game:GetService('Lighting').ClockTime="..hora, mensaje="Hora cambiada" }
+            return { exito=true, codigo="game:GetService('Lighting').ClockTime="..hora, mensaje="🌞 Hora cambiada" }
         elseif nombreCmd == "gravedad" then
             local g = extraerNumero(texto, 196)
-            return { exito=true, codigo="workspace.Gravity="..g, mensaje="Gravedad: "..g }
+            return { exito=true, codigo="workspace.Gravity="..g, mensaje="🌍 Gravedad: "..g }
         end
     end
 
     if cmdData.tipo == "efecto" and nombreCmd == "explosion" then
         local p = extraerNumero(texto, 30)
-        return { exito=true, codigo="local e=Instance.new('Explosion') e.Position=Vector3.new(0,5,0) e.BlastPressure="..p.." e.Parent=workspace", mensaje="Boom!" }
+        return { exito=true, codigo="local e=Instance.new('Explosion') e.Position=Vector3.new(0,5,0) e.BlastPressure="..p.." e.Parent=workspace", mensaje="💥 Boom!" }
     end
     
     if cmdData.tipo == "animacion" then
@@ -315,7 +332,7 @@ local function interpretarComando(texto)
                 codigo = plugin.generarArcoiris("normal")
             end
             if codigo then
-                return { exito = true, codigo = codigo, mensaje = "Animación: " .. cmdData.descripcion }
+                return { exito = true, codigo = codigo, mensaje = "✨ Animación: " .. cmdData.descripcion }
             end
         end
     end
@@ -332,7 +349,7 @@ local function interpretarComando(texto)
     end
 
     Modulos.Database:actualizarEstadistica("comandosFallidos")
-    return { exito=false, codigo=nil, mensaje="Comando no implementado aún" }
+    return { exito=false, codigo=nil, mensaje="⚠️ Comando reconocido pero no implementado aún" }
 end
 
 local function ejecutarCodigo(codigo)
@@ -375,7 +392,7 @@ local function deshacer()
                 end
             end
         end
-        return true, "Deshice " .. count .. " objetos"
+        return true, "↩️ Deshice " .. count .. " objetos"
     else
         return false, "Nada que deshacer"
     end
@@ -383,7 +400,7 @@ end
 
 local function inicializarInterfaz()
     local ventana = Modulos.UI:crearVentana({
-        titulo="IA Constructor v2.0", subtitulo="Con Plugins", ancho=450, alto=600
+        titulo="IA Constructor v2.1", subtitulo="Sistema Mejorado", ancho=450, alto=600
     })
     local chatArea = ventana.ChatArea
     local inputComponents = ventana.InputBox
@@ -391,18 +408,18 @@ local function inicializarInterfaz()
 
     task.wait(0.5)
     
-    -- Usar mensaje personalizado si PersonalityAI está disponible
-    local msg = "¡Hola! Soy tu asistente v2.0\n\nPrueba:\n- casa roja\n- torre 15 azul\n- ayuda"
+    local msg = "¡Hola! Soy tu asistente v2.1\n\n"
+    msg = msg .. "Prueba:\n- casa roja\n- castillo gris\n- cupula azul\n- ayuda\n"
     
     if Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
         local personalityPlugin = Modulos.Database.Plugins.instalados["PersonalityAI"]
         if personalityPlugin and personalityPlugin.obtenerBienvenida then
             msg = personalityPlugin.obtenerBienvenida()
         elseif pluginsActivos > 0 then
-            msg = msg .. "\n\n[PLUGINS: " .. pluginsActivos .. "]\n- rotar\n- flotar\n- stats\n- globalstats"
+            msg = msg .. "\n[PLUGINS: " .. pluginsActivos .. "]\n- rotar\n- flotar\n- stats"
         end
     elseif pluginsActivos > 0 then
-        msg = msg .. "\n\n[PLUGINS: " .. pluginsActivos .. "]\n- rotar\n- flotar\n- stats\n- globalstats"
+        msg = msg .. "\n[PLUGINS: " .. pluginsActivos .. "]\n- rotar\n- flotar\n- stats"
     end
     
     Modulos.UI:crearMensaje(chatArea, {texto=msg, esUsuario=false})
@@ -450,7 +467,7 @@ end
 local function inicializar()
     if not Modulos.Database or not Modulos.UI then error("Módulos no cargados") end
     inicializarInterfaz()
-    local msg = "IA Constructor v2.0 listo!"
+    local msg = "IA Constructor v2.1 listo!"
     if pluginsActivos > 0 then msg = msg .. " (" .. pluginsActivos .. " plugins)" end
     Modulos.UI:mostrarNotificacion({texto=msg,tipo="exito",duracion=3})
     print("[IA Constructor] ✅ Version: "..Modulos.Database.Config.version)
