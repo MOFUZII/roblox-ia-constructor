@@ -68,7 +68,7 @@ UI.Estilos = {
     
     -- Efectos
     sombra = 4,             -- Intensidad de sombra
-    resplandor = 6,         // Tamaño del glow
+    resplandor = 6,         -- Tamaño del glow
     duracionAnimacion = 0.3,
 }
 
