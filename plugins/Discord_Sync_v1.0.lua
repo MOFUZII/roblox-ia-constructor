@@ -1,5 +1,5 @@
 -- ============================================================
--- DISCORD_SYNC.LUA v1.0.2 - ULTRA SIMPLIFICADO
+-- DISCORD_SYNC.LUA v1.0.3 - CORRECCIÓN DE ATRIBUTOS
 -- Sistema de sincronización de datos con Discord
 -- ============================================================
 
@@ -56,13 +56,17 @@ end
 function DiscordSync:registrarConstruccion(usuario, nombreCmd, exito)
     if not self.Config.enabled then return end
     
+    -- Validación de parámetros antes de enviar
+    if not usuario then usuario = "Desconocido" end
+    if not nombreCmd then nombreCmd = "Sin nombre" end
+    
     self:enviarWebhook({
         title = "🏗️ Construcción Creada",
-        description = "Comando: " .. nombreCmd,
+        description = "Comando: " .. tostring(nombreCmd),
         color = 3066993,
         fields = {
-            {name = "Usuario", value = usuario, inline = true},
-            {name = "Comando", value = nombreCmd, inline = true}
+            {name = "Usuario", value = tostring(usuario), inline = true},
+            {name = "Comando", value = tostring(nombreCmd), inline = true}
         }
     })
 end
@@ -124,16 +128,38 @@ local comandos = {
 }
 
 -- ============================================================
--- HOOKS
+-- HOOKS - CORREGIDOS PARA NO USAR ATRIBUTOS
 -- ============================================================
 
 local hooks = {
     onInit = function()
-        print("[Discord Sync] Sistema cargado")
+        print("[Discord Sync] Sistema cargado v1.0.3")
     end,
     
+    -- CORRECCIÓN: No intentar acceder a atributos que pueden no existir
     onConstruccionCreada = function(nombreCmd, usuario)
-        DiscordSync:registrarConstruccion(usuario or "Usuario", nombreCmd, true)
+        -- Usar pcall para capturar cualquier error
+        pcall(function()
+            -- Validar que los parámetros existan
+            local cmdSeguro = nombreCmd or "construccion"
+            local usuarioSeguro = usuario or "Usuario"
+            
+            DiscordSync:registrarConstruccion(usuarioSeguro, cmdSeguro, true)
+        end)
+    end,
+    
+    -- Hook adicional que NO depende de atributos
+    onComandoEjecutado = function(comando)
+        -- Este hook solo se ejecuta si Discord está configurado
+        if DiscordSync.Config.enabled then
+            pcall(function()
+                -- No acceder a workspace ni atributos aquí
+                -- Solo procesar el comando pasado como parámetro
+                if comando then
+                    print("[Discord Sync] Comando ejecutado: " .. tostring(comando))
+                end
+            end)
+        end
     end
 }
 
@@ -144,9 +170,9 @@ local hooks = {
 return {
     info = {
         nombre = "Discord_Sync",
-        version = "1.0.2",
+        version = "1.0.3",
         autor = "MOFUZII",
-        descripcion = "Discord Sync"
+        descripcion = "Discord Sync - Corregido para no usar atributos"
     },
     comandos = comandos,
     hooks = hooks
