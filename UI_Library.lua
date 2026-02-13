@@ -1,6 +1,6 @@
 -- ============================================================
--- UI_LIBRARY.LUA v3.2.2 - FIX CRÍTICO
--- Corregido: PaddingBottom UDim (no UDim2)
+-- UI_LIBRARY.LUA v3.2.3 - FIX SPLASH SCREEN
+-- Corregido: Error en animación del Logo
 -- ============================================================
 
 local UI = {}
@@ -91,7 +91,7 @@ function UI:obtenerContexto()
 end
 
 -- ============================================================
--- SPLASH SCREEN - TAMAÑO 500x600
+-- SPLASH SCREEN - CORREGIDO
 -- ============================================================
 
 function UI:mostrarSplashScreen(callback)
@@ -127,22 +127,29 @@ function UI:mostrarSplashScreen(callback)
     LogoContainer.BackgroundTransparency = 1
     LogoContainer.Parent = Fondo
     
-    local Logo = Instance.new("TextLabel")
+    -- ✅ FIX: Logo como Frame con fondo de color
+    local Logo = Instance.new("Frame")
     Logo.Size = UDim2.new(0, 100, 0, 100)
     Logo.Position = UDim2.new(0.5, -50, 0, 0)
     Logo.BackgroundColor3 = self.Colores.acento
-    Logo.Text = "R"
-    Logo.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Logo.TextSize = 60
-    Logo.Font = self.Estilos.fuenteTitulo
     Logo.BorderSizePixel = 0
-    Logo.BackgroundTransparency = 1
-    Logo.TextTransparency = 1
+    Logo.BackgroundTransparency = 1  -- Empieza invisible
     Logo.Parent = LogoContainer
     
     local LogoCorner = Instance.new("UICorner")
     LogoCorner.CornerRadius = UDim.new(0, 20)
     LogoCorner.Parent = Logo
+    
+    -- ✅ FIX: Letra "R" separada como TextLabel
+    local LogoTexto = Instance.new("TextLabel")
+    LogoTexto.Size = UDim2.new(1, 0, 1, 0)
+    LogoTexto.BackgroundTransparency = 1
+    LogoTexto.Text = "R"
+    LogoTexto.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LogoTexto.TextSize = 60
+    LogoTexto.Font = self.Estilos.fuenteTitulo
+    LogoTexto.TextTransparency = 1  -- Empieza invisible
+    LogoTexto.Parent = Logo
     
     local Titulo = Instance.new("TextLabel")
     Titulo.Size = UDim2.new(0, 200, 0, 40)
@@ -209,8 +216,12 @@ function UI:mostrarSplashScreen(callback)
     task.spawn(function()
         print("[UI_Library] Animando splash...")
         
+        -- ✅ FIX: Animar Frame y TextLabel por separado
         TweenService:Create(Logo, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            BackgroundTransparency = 0,
+            BackgroundTransparency = 0
+        }):Play()
+        
+        TweenService:Create(LogoTexto, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
             TextTransparency = 0
         }):Play()
         
@@ -240,7 +251,8 @@ function UI:mostrarSplashScreen(callback)
         
         print("[UI_Library] Splash completado, ejecutando callback...")
         
-        for _, obj in ipairs({Logo, Titulo, Subtitulo, BarraContainer, Estado}) do
+        -- Fade out
+        for _, obj in ipairs({Logo, LogoTexto, Titulo, Subtitulo, BarraContainer, Estado}) do
             TweenService:Create(obj, TweenInfo.new(0.2), {
                 BackgroundTransparency = 1,
                 TextTransparency = 1
@@ -256,7 +268,7 @@ function UI:mostrarSplashScreen(callback)
         
         if callback then 
             print("[UI_Library] Ejecutando callback...")
-            callback() 
+            pcall(callback)
         end
     end)
 end
@@ -655,10 +667,9 @@ function UI:crearMensajeConStreaming(chatArea, config, callback)
     MsgCorner.CornerRadius = UDim.new(0, 8)
     MsgCorner.Parent = MsgBubble
     
-    -- ✅ FIX CRÍTICO: UDim no UDim2
     local MsgPadding = Instance.new("UIPadding")
     MsgPadding.PaddingTop = UDim.new(0, 12)
-    MsgPadding.PaddingBottom = UDim.new(0, 12)  -- ⬅️ CORREGIDO
+    MsgPadding.PaddingBottom = UDim.new(0, 12)
     MsgPadding.PaddingLeft = UDim.new(0, 14)
     MsgPadding.PaddingRight = UDim.new(0, 14)
     MsgPadding.Parent = MsgBubble
