@@ -12,6 +12,7 @@ local URLS = {
     Plugins = {
         AnimationMaster = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/AnimationMaster_Plugin.lua",
         HybridLearning = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/plugins/HybridLearning_Plugin.lua",
+        PersonalityAI = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/plugins/PersonalityAI_Plugin.lua",
     }
 }
 
@@ -220,11 +221,29 @@ local function interpretarComando(texto)
         for i = 2, #palabras do
             table.insert(parametros, palabras[i])
         end
+        
+        -- Intentar obtener respuesta personalizada del plugin PersonalityAI
+        local mensajeRespuesta = "Construyendo: " .. cmdData.descripcion
+        if Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
+            local personalityPlugin = Modulos.Database.Plugins.instalados["PersonalityAI"]
+            if personalityPlugin and personalityPlugin.generarRespuesta then
+                local colorParam = nil
+                for _, param in ipairs(parametros) do
+                    local color = extraerColor(param)
+                    if color then
+                        colorParam = param
+                        break
+                    end
+                end
+                mensajeRespuesta = personalityPlugin.generarRespuesta("construccion", nombreCmd, {color = colorParam})
+            end
+        end
+        
         local codigo = construccion(parametros)
         if Modulos.Database.ejecutarHookPlugin then
             Modulos.Database:ejecutarHookPlugin("onConstruccionCreada", nombreCmd)
         end
-        return { exito = true, codigo = codigo, mensaje = "Construyendo: " .. cmdData.descripcion }
+        return { exito = true, codigo = codigo, mensaje = mensajeRespuesta }
     end
 
     if cmdData.tipo == "objeto" then
@@ -372,8 +391,17 @@ local function inicializarInterfaz()
 
     task.wait(0.5)
     
+    -- Usar mensaje personalizado si PersonalityAI está disponible
     local msg = "¡Hola! Soy tu asistente v2.0\n\nPrueba:\n- casa roja\n- torre 15 azul\n- ayuda"
-    if pluginsActivos > 0 then
+    
+    if Modulos.Database.Plugins and Modulos.Database.Plugins.instalados then
+        local personalityPlugin = Modulos.Database.Plugins.instalados["PersonalityAI"]
+        if personalityPlugin and personalityPlugin.obtenerBienvenida then
+            msg = personalityPlugin.obtenerBienvenida()
+        elseif pluginsActivos > 0 then
+            msg = msg .. "\n\n[PLUGINS: " .. pluginsActivos .. "]\n- rotar\n- flotar\n- stats\n- globalstats"
+        end
+    elseif pluginsActivos > 0 then
         msg = msg .. "\n\n[PLUGINS: " .. pluginsActivos .. "]\n- rotar\n- flotar\n- stats\n- globalstats"
     end
     
