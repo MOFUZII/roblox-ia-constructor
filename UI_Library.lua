@@ -2,6 +2,9 @@
 -- UI_LIBRARY.LUA v3.2 - VERSIÓN MEJORADA CON STREAMING
 -- Tema oscuro estilo Claude + Animaciones + Memoria
 -- ============================================================
+-- IMPORTANTE: Este archivo DEBE llamarse "UI_Library.lua"
+-- NO cambiar el nombre o CORE_IA.lua no lo encontrará
+-- ============================================================
 -- NUEVAS CARACTERÍSTICAS:
 -- ✅ Splash Screen "Rozek" con animación
 -- ✅ Sistema de streaming de texto (letra por letra)
@@ -521,7 +524,7 @@ function UI:_crearChatArea(parent)
     
     local ChatPadding = Instance.new("UIPadding")
     ChatPadding.PaddingTop = UDim.new(0, 16)
-    ChatPadding.PaddingBottom = UDim2.new(0, 16)
+    ChatPadding.PaddingBottom = UDim.new(0, 16)
     ChatPadding.PaddingLeft = UDim.new(0, 16)
     ChatPadding.PaddingRight = UDim.new(0, 16)
     ChatPadding.Parent = ChatArea
