@@ -1,6 +1,6 @@
 -- ============================================================
 -- DATABASE_MEJORADO.LUA - Base de Conocimiento COMPLETA
--- Versión 2.1 - Con TODAS las construcciones implementadas
+-- Versión 2.1.1 - CORRECCIÓN FINAL DE ATRIBUTOS
 -- ============================================================
 
 local Database = {}
@@ -728,7 +728,7 @@ function Database:instalarPlugin(plugin)
     self.Plugins.instalados[nombre] = plugin
     self.Plugins.activos[nombre] = true
     
-    -- Ejecutar hook onInit si existe
+    -- Ejecutar hook onInit si existe (con protección)
     if plugin.hooks and plugin.hooks.onInit then
         pcall(plugin.hooks.onInit)
     end
@@ -736,9 +736,10 @@ function Database:instalarPlugin(plugin)
     return true, "Plugin instalado correctamente"
 end
 
+-- ⚠️ CORRECCIÓN CRÍTICA: Deshabilitado para evitar error de atributos Instance
 function Database:ejecutarHookPlugin(hookNombre, ...)
-    -- Desactivado temporalmente para evitar error de atributos
-    -- Discord Sync funciona sin necesidad de hooks desde CORE_IA
+    -- Los hooks están temporalmente deshabilitados
+    -- Discord Sync y otros plugins funcionan sin hooks desde CORE_IA
     return
 end
 
@@ -794,10 +795,10 @@ Database.Estadisticas = {
 -- ============================================================
 
 Database.Config = {
-    version = "2.1.0",
+    version = "2.1.1",
     autor = "MOFUZII",
     github = "https://github.com/MOFUZII/roblox-ia-constructor",
-    actualizacion = "2026-02-12",
+    actualizacion = "2026-02-13",
     comportamiento = {
         autoGuardar = true,
         mostrarNotificaciones = true,
