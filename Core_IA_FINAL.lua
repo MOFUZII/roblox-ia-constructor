@@ -1,4 +1,4 @@
--- ============================================================
+============================================================
 -- CORE_IA.LUA v3.2 - Cerebro Principal MEJORADO
 -- Sistema Principal - Con SmartAI, Splash Screen y Streaming
 -- ============================================================
@@ -14,8 +14,8 @@ print("[IA Constructor] Iniciando sistema v3.2...")
 
 local URLS = {
     Database     = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/Database_Mejorado.lua",
-    UI_Library   = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/UI_Library_v3_2.lua", -- ⬅️ ACTUALIZADO
-    SmartAI      = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/SmartResponses.lua",  -- ⬅️ NUEVO
+    UI_Library   = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/UI_Library.lua", -- ⬅️ CORREGIDO (sin _v3_2)
+    SmartAI      = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/SmartResponses.lua",
     Plugins = {
         AnimationMaster = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/AnimationMaster_Plugin.lua",
         HybridLearning  = "https://raw.githubusercontent.com/MOFUZII/roblox-ia-constructor/main/plugins/HybridLearning_Plugin.lua",
